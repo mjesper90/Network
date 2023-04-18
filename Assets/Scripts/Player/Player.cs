@@ -6,7 +6,7 @@ using UnityEngine;
 public class Player : MonoBehaviour
 {
     public float speed = 10f;
-    public float jumpForce = 10f;
+    public float jumpForce = 2000f;
 
     private Transform _t;
     private Rigidbody _rb;
@@ -25,7 +25,11 @@ public class Player : MonoBehaviour
         {
             GameController.Instance.Players.Add(_user.Username, gameObject);
             IsLocal = true;
-            _rb.useGravity = true;
+        }
+        else
+        {
+            //Change color
+            GetComponentInChildren<Renderer>().material.color = Color.red;
         }
     }
 
@@ -33,6 +37,8 @@ public class Player : MonoBehaviour
     {
         if (IsLocal)
         {
+            //Gravity with deltaTime
+            _rb.AddForce(Vector3.down * 9.82f * Time.deltaTime * _rb.mass, ForceMode.Acceleration);
             Movement();
             Rotation();
         }

@@ -16,6 +16,8 @@ namespace GameServer
             _server = new Server(Port);
             GameController.Instance.SetServer(_server);
             Debug.Log("Server started");
+#else
+
 #endif
         }
 

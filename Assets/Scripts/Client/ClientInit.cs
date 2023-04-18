@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Net.Sockets;
 using DTOs;
 using UnityEngine;
@@ -25,17 +26,12 @@ namespace GameClient
             }
         }
 
-        void Start()
-        {
-            Player p = FindObjectOfType<Player>();
-            p.IsLocal = true;
-            LocalPlayer = p.gameObject;
-        }
 
         protected void FixedUpdate()
         {
-            if (_client == null && LocalPlayer != null)
+            if (_client == null && GameController.Instance.Players.Count == 1)
             {
+                LocalPlayer = GameController.Instance.Players.First().Value;
                 _client = new Client(IP, Port);
                 Debug.Log("Client started");
                 _client.Send(LocalPlayer.GetComponent<Player>().GetUser());
