@@ -9,7 +9,7 @@ namespace GameClient
     {
         public string IP = "127.0.0.1";
         public int Port = 8052;
-        private Client _client;
+        public Client Client;
         public GameObject LocalPlayer;
 
         public static ClientInit Instance;
@@ -26,19 +26,28 @@ namespace GameClient
             }
         }
 
-
         protected void FixedUpdate()
         {
-            if (_client == null && GameController.Instance.Players.Count == 1)
+            if (Client == null && GameController.Instance.Players.Count == 1)
             {
-                LocalPlayer = GameController.Instance.Players.First().Value;
-                _client = new Client(IP, Port);
-                Debug.Log("Client started");
-                _client.Send(LocalPlayer.GetComponent<Player>().GetUser());
+
+                LocalPlayer = GameController.Instance.Players[GameController.Instance.Players.Keys.First()];
+                Debug.Log("Local player found " + LocalPlayer.name);
+
+                if (LocalPlayer != null && LocalPlayer.GetComponent<Player>() != null && LocalPlayer.GetComponent<Player>().UserInfo != null)
+                {
+                    Client = new Client(IP, Port);
+                    Debug.Log("Client started");
+                    Client.Send(LocalPlayer.GetComponent<Player>().UserInfo);
+                }
+                else
+                {
+                    Debug.Log("Local player not found");
+                }
             }
-            else if (_client != null && LocalPlayer != null)
+            else if (Client != null)
             {
-                _client.Send(new Position(LocalPlayer.transform.position));
+                Client.Send(new Position(LocalPlayer.transform.position));
             }
             else
             {

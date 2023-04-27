@@ -4,15 +4,17 @@ using DTOs;
 using GameClient;
 using GameServer;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 public class GameController : MonoBehaviour
 {
     public static GameController Instance;
-    private Server _server;
-    private Client _client;
+    private Camera _cam;
+
     public Dictionary<string, GameObject> Players = new Dictionary<string, GameObject>();
     public Dictionary<string, GameObject> Projectiles = new Dictionary<string, GameObject>();
+    private Server _server;
+    private Client _client;
+    public Player LocalPlayer;
 
     public void Awake()
     {
@@ -24,6 +26,21 @@ public class GameController : MonoBehaviour
         {
             Instance = this;
         }
+    }
+
+    public void Start()
+    {
+        GameObject go = Instantiate(Resources.Load(CONSTANTS.PlayerPrefab), new Vector3(0, 0.5f, 0), Quaternion.identity) as GameObject;
+        _cam = Camera.main;
+
+        //Add camera to player with offset
+        _cam.transform.SetParent(go.transform);
+        _cam.transform.localPosition = CONSTANTS.CameraOffset;
+
+        LocalPlayer = go.GetComponent<Player>();
+        Debug.Log(LocalPlayer.UserInfo.Username + " spawned");
+        Players.Add(LocalPlayer.UserInfo.Username, go);
+        LocalPlayer.IsLocal = true;
     }
 
     public void SetServer(Server server)
@@ -58,30 +75,35 @@ public class GameController : MonoBehaviour
 
     public void BatchUpdate(Batch batch)
     {
-        string localplayername = ClientInit.Instance.LocalPlayer.GetComponent<Player>().GetUser().Username;
+        string localplayername = ClientInit.Instance.LocalPlayer.GetComponent<Player>().UserInfo.Username;
         foreach (User user in batch.Users)
         {
-            //Debug.Log("User: " + user.Username + " " + user.Pos.X + " " + user.Pos.Y + " " + user.Pos.Z + " " + user.Health);
+            //Update non-local players already spawned
             if (Players.ContainsKey(user.Username))
             {
                 Player p = Players[user.Username].GetComponent<Player>();
-                p.GetUser().Health = user.Health;
+                p.UserInfo.Health = user.Health;
                 if (!p.IsLocal)
                 {
                     p.LerpMovement(new Vector3(user.Pos.X, user.Pos.Y, user.Pos.Z));
                 }
             }
+            //Spawn new players
             else
             {
-                GameObject res = Resources.Load<GameObject>("Prefabs/Player");
-                GameObject player = Instantiate(res, new Vector3(user.Pos.X, user.Pos.Y, user.Pos.Z), Quaternion.identity) as GameObject;
-                player.GetComponent<Player>().GetUser().Username = user.Username;
+                GameObject res = Resources.Load<GameObject>(CONSTANTS.PlayerPrefab);
+                GameObject player = Instantiate(res, new Vector3(user.Pos.X, user.Pos.Y, user.Pos.Z), Quaternion.identity);
+                player.GetComponent<Player>().UserInfo.Username = user.Username;
                 Debug.Log("Player " + user.Username + " spawned");
+                foreach (GameObject otherPlayer in Players.Values)
+                {
+                    //Physics.IgnoreCollision(player.GetComponent<Collider>(), otherPlayer.GetComponent<Collider>());
+                }
                 Players.Add(user.Username, player);
             }
         }
 
-        //Destroy players that are not in the batch
+        //Destroy players that are not in the batch, except for the local player
         List<string> toRemove = new List<string>();
         foreach (string key in Players.Keys)
         {
@@ -110,12 +132,33 @@ public class GameController : MonoBehaviour
         {
             if (Projectiles.ContainsKey(projectile.ID))
             {
-                Projectiles[projectile.ID].transform.position = new Vector3(projectile.End.X, projectile.End.Y, projectile.End.Z);
+                if (projectile.Owner.Username != localplayername)
+                    Projectiles[projectile.ID].GetComponent<MonoProjectile>().LerpMovement(new Vector3(projectile.Current.X, projectile.Current.Y, projectile.Current.Z));
             }
             else
             {
-                GameObject proj = Instantiate(Resources.Load("Prefabs/Projectile"), new Vector3(projectile.Start.X, projectile.Start.Y, projectile.Start.Z), Quaternion.identity) as GameObject;
+                GameObject res = Resources.Load<GameObject>(CONSTANTS.ProjectilePrefab);
+                GameObject proj = Instantiate(res, new Vector3(projectile.Start.X, projectile.Start.Y, projectile.Start.Z), Quaternion.identity);
+                proj.GetComponent<MonoProjectile>().Launch(projectile);
                 Projectiles.Add(projectile.ID, proj);
+            }
+        }
+
+        toRemove = new List<string>();
+        foreach (string key in Projectiles.Keys)
+        {
+            bool found = false;
+            foreach (Projectile projectile in batch.Projectiles)
+            {
+                if (projectile.ID == key)
+                {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found)
+            {
+                toRemove.Add(key);
             }
         }
     }

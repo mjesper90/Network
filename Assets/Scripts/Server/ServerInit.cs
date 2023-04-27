@@ -7,7 +7,7 @@ namespace GameServer
     public class ServerInit : MonoBehaviour
     {
         private Server _server;
-        public int Port = 8052;
+        public int Port = CONSTANTS.Port;
 
         // Start is called before the first frame update
         void Start()

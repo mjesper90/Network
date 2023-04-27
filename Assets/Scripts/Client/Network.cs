@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using DTOs;
 using UnityEngine;
@@ -11,7 +12,7 @@ namespace GameClient
             if (obj is Batch)
             {
                 Batch batch = (Batch)obj;
-                Debug.Log("Recieving batch of " + batch.Users.Length + " users " + batch.Users[0].Username);
+                Debug.Log(batch);
                 ExecuteOnMainthread.RunOnMainThread.Enqueue(() => { GameController.Instance.BatchUpdate(batch); });
             }
             if (obj is Projectile)
@@ -33,22 +34,22 @@ namespace GameClient
 
         public void RecieveUser(User user)
         {
-
+            throw new NotImplementedException();
         }
 
         public void SendUser(User user)
         {
-
+            throw new NotImplementedException();
         }
 
         public void SendProjectile(Projectile projectile)
         {
-
+            throw new NotImplementedException();
         }
 
         public void RecieveProjectile(Projectile projectile)
         {
-
+            throw new NotImplementedException();
         }
     }
 }

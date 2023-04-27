@@ -6,6 +6,7 @@ namespace DTOs
     public class Projectile
     {
         public Position Start;
+        public Position Current;
         public Position End;
         public User Owner;
         public string ID;
@@ -15,6 +16,7 @@ namespace DTOs
         {
             ID = Guid.NewGuid().ToString();
             Start = start;
+            Current = start;
             End = end;
             Owner = owner;
             Damage = damage;
@@ -22,7 +24,7 @@ namespace DTOs
 
         public override string ToString()
         {
-            return "Projectile: " + ID + " from " + Start + " to " + End + " owned by " + Owner.Username + " with damage " + Damage;
+            return "Projectile: " + ID + " from " + Start + " to " + End + " owned by " + Owner.Username + " with damage " + Damage + " and current position " + Current;
         }
     }
 }

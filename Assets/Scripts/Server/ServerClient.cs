@@ -15,7 +15,7 @@ namespace GameServer
 
         private NetworkStream _stream;
         private byte[] _receiveBuffer;
-        private readonly int _dataBuffer = 4096;
+        private readonly int _dataBuffer = CONSTANTS.BufferSize;
         private BinaryFormatter _br;
         public Network NetworkRef;
 
@@ -104,9 +104,15 @@ namespace GameServer
                 //Handle projectiles
                 foreach (Projectile projectile in other.NetworkRef.Projectiles)
                 {
+                    //UpdateCurrentPosition(projectile);
                     Send(Serialize(projectile));
                 }
             }
+        }
+
+        private Position UpdateCurrentPosition(Projectile p)
+        {
+            throw new NotImplementedException();
         }
     }
 }

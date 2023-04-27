@@ -10,7 +10,7 @@ namespace GameClient
 {
     public class Client
     {
-        private const int _dataBufferSize = 4096;
+        private int _dataBufferSize = CONSTANTS.BufferSize;
         private readonly TcpClient _socket;
         private NetworkStream _stream;
         private readonly byte[] _recieveBuffer;

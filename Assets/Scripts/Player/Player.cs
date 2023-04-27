@@ -5,40 +5,49 @@ using UnityEngine;
 
 public class Player : MonoBehaviour
 {
-    public float speed = 10f;
-    public float jumpForce = 2000f;
+    public Weapon Weapon;
 
     private Transform _t;
     private Rigidbody _rb;
     private bool _isGrounded = false;
-    private User _user;
+    public User UserInfo = null;
     public bool IsLocal = false;
 
     public void Awake()
     {
         _t = transform;
         _rb = GetComponent<Rigidbody>();
-        _user = new User("Player_" + Random.Range(0, 1000), _t.position.x, _t.position.y, _t.position.z);
-        _user.Health = 100f;
+        UserInfo = new User("Player_" + Random.Range(0, 1000), _t.position.x, _t.position.y, _t.position.z, 100f);
 
         if (GameController.Instance.Players.Count == 0)
         {
-            GameController.Instance.Players.Add(_user.Username, gameObject);
-            IsLocal = true;
         }
         else
         {
             //Change color
             GetComponentInChildren<Renderer>().material.color = Color.red;
         }
+        Weapon = Instantiate(Resources.Load(CONSTANTS.WeaponPrefab) as GameObject, _t.position, _t.rotation).GetComponent<Weapon>();
+        Weapon.Owner = this;
+        Weapon.transform.SetParent(_t);
+        //Move weapon slightly
+        Weapon.transform.localPosition = new Vector3(0.5f, 0f, 0f);
     }
 
     public void Update()
     {
         if (IsLocal)
         {
-            //Gravity with deltaTime
-            _rb.AddForce(Vector3.down * 9.82f * Time.deltaTime * _rb.mass, ForceMode.Acceleration);
+            //Check if player is grounded
+            if (_t.position.y <= 0.5f)
+            {
+                _t.position = new Vector3(_t.position.x, 0.5f, _t.position.z);
+            }
+            else if (!_isGrounded)
+            {
+                _rb.AddForce(Vector3.down * CONSTANTS.Gravity * Time.deltaTime * _rb.mass, ForceMode.Acceleration);
+            }
+            Shoot();
             Movement();
             Rotation();
         }
@@ -48,8 +57,6 @@ public class Player : MonoBehaviour
     {
         //Rotate transform with mouse
         float mouseX = Input.GetAxis("Mouse X");
-        float mouseY = Input.GetAxis("Mouse Y");
-
         _t.Rotate(Vector3.up * mouseX);
     }
 
@@ -58,24 +65,32 @@ public class Player : MonoBehaviour
         if (_isGrounded)
         {
             Debug.Log("Jump");
-            _rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
+            _rb.AddForce(Vector3.up * CONSTANTS.JumpForce, ForceMode.Impulse);
             StartCoroutine(JumpCoroutine());
         }
     }
 
-    public User GetUser()
+    public void Shoot()
     {
-        _user = new User(_user.Username, _t.position.x, _t.position.y, _t.position.z, _user.Health);
-        return _user;
+        if (IsLocal && Weapon != null && Input.GetMouseButtonDown(0))
+        {
+            MonoProjectile p = Weapon.GetComponent<Weapon>().PewPew(true);
+            GameController.Instance.Projectiles.Add(p.Projectile.ID, p.gameObject);
+            ClientInit.Instance.Client.Send(p.Projectile);
+        }
     }
 
     private void Movement()
     {
+        RaycastHit groundHit;
         //Check for ground
-        if (!_isGrounded && Physics.Raycast(_t.position, Vector3.down, 1f))
+        if (!_isGrounded && Physics.Raycast(_t.position, Vector3.down, out groundHit, 0.6f))
         {
-            Debug.Log("Grounded");
-            _isGrounded = true;
+            if (groundHit.collider.gameObject.tag == "Ground")
+            {
+                Debug.Log("Grounded");
+                _isGrounded = true;
+            }
         }
 
         //Jump
@@ -84,23 +99,27 @@ public class Player : MonoBehaviour
             Jump();
         }
 
-        //WASD Movement
+        //WASD Movement 
+        Vector3 movement = Vector3.zero;
         if (Input.GetKey(KeyCode.W))
         {
-            _t.position += _t.forward * speed * Time.deltaTime;
+            movement += _t.forward;
         }
         if (Input.GetKey(KeyCode.S))
         {
-            _t.position -= _t.forward * speed * Time.deltaTime;
+            movement -= _t.forward;
         }
         if (Input.GetKey(KeyCode.A))
         {
-            _t.position -= _t.right * speed * Time.deltaTime;
+            movement -= _t.right;
         }
         if (Input.GetKey(KeyCode.D))
         {
-            _t.position += _t.right * speed * Time.deltaTime;
+            movement += _t.right;
         }
+        movement.Normalize();
+        movement *= CONSTANTS.PlayerSpeed;
+        _rb.velocity = new Vector3(movement.x, _rb.velocity.y, movement.z);
     }
 
     //Jump coroutine
@@ -110,11 +129,13 @@ public class Player : MonoBehaviour
         _isGrounded = false;
     }
 
+    //Lerp movement
     public void LerpMovement(Vector3 vector3)
     {
         StartCoroutine(LerpMovementCoroutine(vector3, CONSTANTS.ServerSpeed));
     }
 
+    //Lerp movement coroutine
     private IEnumerator LerpMovementCoroutine(Vector3 vector3, float time)
     {
         float elapsedTime = 0;

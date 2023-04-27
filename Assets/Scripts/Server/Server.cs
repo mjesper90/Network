@@ -57,7 +57,6 @@ namespace GameServer
                 {
                     disconnectedClients.Add(client);
                 }
-
             }
             Clients.RemoveAll(disconnectedClients.Contains);
 

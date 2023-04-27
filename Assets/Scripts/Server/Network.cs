@@ -37,7 +37,7 @@ namespace GameServer
             if (obj is Projectile)
             {
                 Projectile projectile = (Projectile)obj;
-                Debug.Log("Recieved projectile: " + projectile);
+                //Debug.Log("Recieved projectile: " + projectile);
                 Projectiles.Add(projectile);
             }
             else if (obj is User)
@@ -61,12 +61,12 @@ namespace GameServer
 
         public void RecieveUser(User user)
         {
-
+            throw new NotImplementedException();
         }
 
         public void RecieveProjectile(Projectile projectile)
         {
-
+            throw new NotImplementedException();
         }
 
         public void SendUser(User user)
