@@ -11,7 +11,7 @@ namespace GameServer
     public class ServerClient
     {
         public string Username;
-        public TcpClient Socket;
+        public TcpClient Socket; //Maybe UDP?
 
         private NetworkStream _stream;
         private byte[] _receiveBuffer;
