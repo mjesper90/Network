@@ -14,3 +14,10 @@ This project is an arbitrary project for testing network communication between a
 |5|Multiple clients on a single server|-||
 |6|GitHub Pages|-|Setup a GitHub Pages webpage for documentation and similar|
 |7||||
+
+
+### Work-to-do
+
+* Update class diagram with current src code
+* UDP stand-alone project
+* 
