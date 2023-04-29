@@ -2,7 +2,7 @@
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
 
-namespace Networker.Common;
+namespace Network.Common;
 
 /// <summary>
 /// A class for helping client to send a connection request

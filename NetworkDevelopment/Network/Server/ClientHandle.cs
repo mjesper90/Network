@@ -3,7 +3,7 @@
 using System.Net;
 using System.Net.Sockets;
 
-namespace Networker.Server;
+namespace Network.Server;
 
 public class ClientHandle : IDisposable
 {

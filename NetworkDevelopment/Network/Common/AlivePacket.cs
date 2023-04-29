@@ -1,6 +1,6 @@
 ﻿
 
-namespace Networker.Common;
+namespace Network.Common;
 
 /// <summary>
 /// We use this once in a while to check if the connection is still there. If this dose not get send for a sertain while the connection may be lost.

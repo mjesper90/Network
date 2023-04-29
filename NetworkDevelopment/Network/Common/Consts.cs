@@ -1,6 +1,6 @@
 ﻿
 
-namespace Networker.Common;
+namespace Network.Common;
 
 public class Consts
 {

@@ -1,14 +1,14 @@
 ﻿using System.Net.Sockets;
 using UDP_Development;
-using Networker;
-using Networker.Client;
-using Networker.Common;
-using Networker.Server;
+using Network;
+using Network.Client;
+using Network.Common;
+using Network.Server;
 
 bool Running = true;
 
 Server server = new Server();
-UDP_Client client = new UDP_Client("Just somebody that i use to know");
+Client client = new Client("Just somebody that i use to know");
 
 Task.Run(() =>
 {

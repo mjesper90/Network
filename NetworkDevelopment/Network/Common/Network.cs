@@ -3,7 +3,7 @@
 using System.Net.Sockets;
 using System.Net;
 
-namespace Networker.Common;
+namespace Network.Common;
 
 /// <summary>
 /// Used class that makes it easier to read and write to each other over both TCP and UDP

@@ -1,8 +1,8 @@
 ﻿using System.Net.Sockets;
 using System.Net;
-using Networker.Common;
+using Network.Common;
 
-namespace Networker.Server;
+namespace Network.Server;
 
 /*
  * Server and Client connect over TCP

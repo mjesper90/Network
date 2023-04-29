@@ -1,8 +1,8 @@
 ﻿using System.Net;
 using System.Net.Sockets;
-using Networker.Common;
+using Network.Common;
 
-namespace Networker.Client;
+namespace Network.Client;
 
 public enum ClientState
 {
@@ -11,19 +11,19 @@ public enum ClientState
     Connected,
 }
 
-public class UDP_Client : IDisposable
+public class Client : IDisposable
 {
     private IPEndPoint _server;
     private IPAddress _localAdress;
 
-    private Network? _network;
+    private Common.Network? _network;
 
     public ClientState State { get; private set; } = ClientState.Standby;
     public bool Disposed { get; private set; } = false;
 
     public string UserName;
 
-    public UDP_Client(string userName)
+    public Client(string userName)
     {
         _server = new IPEndPoint(0, 0);
         _localAdress = NetworkHelper.GetLocalIPAddress();

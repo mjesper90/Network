@@ -5,7 +5,7 @@ using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Networker.Common;
+namespace Network.Common;
 
 public class Serializer
 {

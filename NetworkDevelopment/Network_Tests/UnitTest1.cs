@@ -1,4 +1,4 @@
-namespace UDP_Networker_Tests
+namespace Network_Tests
 {
     public class UnitTest1
     {

@@ -1,4 +1,4 @@
-﻿namespace Networker;
+﻿namespace Network;
 
 /// <summary>
 /// Indicator of what type of Log is being pushed
