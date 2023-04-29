@@ -1,6 +1,6 @@
 ﻿
 
-namespace UDP_Networker.Common;
+namespace Networker.Common;
 
 /// <summary>
 /// We use this once in a while to check if the connection is still there. If this dose not get send for a sertain while the connection may be lost.
@@ -10,8 +10,8 @@ internal class AlivePacket : Packet
     // Random bytes to verify the the connection is still alive
     private static readonly byte[] _data = { 255, 255, 128, 128, 1, 1 };
 
-    public AlivePacket(uint clientID, uint packetID)
-        : base(clientID, packetID, _data)
+    public AlivePacket(uint clientID, int packetID)
+        : base(_data, true, packetID, clientID)
     {
 
     }

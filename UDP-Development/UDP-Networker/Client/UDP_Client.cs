@@ -1,10 +1,10 @@
 ﻿using System.Net;
 using System.Net.Sockets;
-using UDP_Networker.Common;
+using Networker.Common;
 
-namespace UDP_Networker.Client;
+namespace Networker.Client;
 
-public enum UDP_ClientState
+public enum ClientState
 {
     Standby,
     Connecting,
@@ -13,43 +13,51 @@ public enum UDP_ClientState
 
 public class UDP_Client : IDisposable
 {
-    private TcpClient _tcpClient;
-    private UdpClient _client;
     private IPEndPoint _server;
     private IPAddress _localAdress;
 
-    public UDP_ClientState State { get; private set; } = UDP_ClientState.Standby;
+    private Network? _network;
+
+    public ClientState State { get; private set; } = ClientState.Standby;
     public bool Disposed { get; private set; } = false;
 
     public string UserName;
 
     public UDP_Client(string userName)
     {
-        _tcpClient = new TcpClient();
-        _client = new UdpClient();
         _server = new IPEndPoint(0, 0);
         _localAdress = NetworkHelper.GetLocalIPAddress();
 
         UserName = userName;
     }
 
+    public void Connect(IPEndPoint serverAdress)
+    {
+        if (_network is not null)
+            if (!_network.IsDisposed)
+                _network.Dispose();
+
+        _ = Task.Run(() => InternalConnectToServer(serverAdress));
+    }
+
     private void InternalConnectToServer(IPEndPoint serverAdress)
     {
-        if (State != UDP_ClientState.Standby)
+        if (State != ClientState.Standby)
             throw new Exception("Can not connect to server when the client is allready connected or is currently connecting");
 
-        State = UDP_ClientState.Connecting;
+        State = ClientState.Connecting;
 
         _server = serverAdress;
-        _tcpClient.Connect(_server);
+        TcpClient tcpClient = new TcpClient();
+        tcpClient.Connect(_server);
 
-        if (_tcpClient.Connected)   
+        if (tcpClient.Connected)
         {
             // Send request
             ConnectionRequest cR = new ConnectionRequest(_localAdress.Address, Consts.CLIENT_RECIVE_PORT, UserName);
 
             byte[] requestData = Serializer.GetData(cR);
-            var stream = _tcpClient.GetStream();
+            var stream = tcpClient.GetStream();
 
             stream.Write(requestData);
 
@@ -63,31 +71,29 @@ public class UDP_Client : IDisposable
                 if (buffer[i] != Consts.CONNECTION_ESTABLISHED[i])
                     Failed = true;
 
-            _tcpClient.Close(); // Done with tcp
-
             if (Failed)
             {
                 Logger.Log("Could not establish connection to server", LogWarningLevel.Info);
-                State = UDP_ClientState.Standby;
+                State = ClientState.Standby;
                 return;
             }
 
-            State = UDP_ClientState.Connected;
+            State = ClientState.Connected;
             return;
         }
 
         Logger.Log("Could not connect to server", LogWarningLevel.Info);
-        State = UDP_ClientState.Standby;
+        State = ClientState.Standby;
     }
 
-    public void Connect(IPEndPoint serverAdress)
+    private void ThrowIfNotConnected()
     {
-        _ = Task.Run(() => InternalConnectToServer(serverAdress));
+
     }
 
-    public void SendData(byte[] data)
+    public void SendSafeData(byte[] data)
     {
-        if (State != UDP_ClientState.Connected)
+        if (State != ClientState.Connected)
             throw new Exception("Can not send data when not connected");
 
     }
@@ -99,8 +105,7 @@ public class UDP_Client : IDisposable
 
     public void Dispose()
     {
+        _network?.Dispose();
         Disposed = true;
-        _tcpClient.Dispose();
-        _client.Dispose();
     }
 }

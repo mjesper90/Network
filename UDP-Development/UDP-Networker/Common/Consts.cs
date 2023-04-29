@@ -1,6 +1,6 @@
 ﻿
 
-namespace UDP_Networker.Common;
+namespace Networker.Common;
 
 public class Consts
 {

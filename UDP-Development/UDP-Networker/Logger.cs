@@ -1,6 +1,4 @@
-﻿
-
-namespace UDP_Networker.Common;
+﻿namespace Networker;
 
 /// <summary>
 /// Indicator of what type of Log is being pushed

@@ -1,17 +1,23 @@
 ﻿
 
-namespace UDP_Networker.Common;
+namespace Networker.Common;
 
 public class Packet
 {
     public uint ClientID;
-    public uint PacketID;
+
+    /// <summary>
+    /// Indicates if the data is send over TCP (True) or UDP (False)
+    /// </summary>
+    public bool SafePacket;
+    public int Size;
     public byte[] Data;
 
-    public Packet(uint clientID, uint packetID, byte[] data)
+    public Packet(byte[] data, bool safePacket, int size, uint clientID)
     {
-        ClientID = clientID;
-        PacketID = packetID;
         Data = data;
+        SafePacket = safePacket;
+        Size = size;
+        ClientID = clientID;
     }
 }

@@ -1,20 +1,22 @@
 ﻿using System.Net.Sockets;
 using System.Net;
-using UDP_Networker.Common;
+using Networker.Common;
 
-namespace UDP_Networker.Server;
+namespace Networker.Server;
 
 /*
  * Server and Client connect over TCP
  * Then the server gives the client a port to send to, and the client gives a port for the server to send to.
- * Then we use UDP from there
+ * Then we use UDP from there with TCP critical write support
  */
 
-public class UDP_Server : IDisposable
+/// <summary>
+/// A server to client connection handle. Suport for TCP writes and UDP streaming
+/// </summary>
+public class Server : IDisposable
 {
-    private List<UDP_ClientHandle> _clients = new List<UDP_ClientHandle>();
+    private List<ClientHandle> _clients = new List<ClientHandle>();
     private uint _clientIDCounter = 0;
-    private uint _packetIDCounter = 0;
     private byte[] data;
     private TcpListener _clientRequestListener = new TcpListener(IPAddress.Any, Consts.LISTENING_PORT);
     private IPEndPoint? _listenIPEndPoint = new IPEndPoint(IPAddress.Any, Consts.LISTENING_PORT);
@@ -22,11 +24,11 @@ public class UDP_Server : IDisposable
     public bool AcceptClients { get; set; } = true;
     public bool Disposed { get; private set; } = false;
 
-    public UDP_Server()
+    public Server()
     {
         Logger.Log("Starting server up", LogWarningLevel.Info);
 
-        data = new byte[1024];
+        data = new byte[2048];
 
         _clientRequestListener.Start();
         Task.Run(ListenForClient);
@@ -55,11 +57,9 @@ public class UDP_Server : IDisposable
 
         Logger.Log("Server got TCP connection", LogWarningLevel.Info);
 
-        _ = Task.Run(ListenForClient);
-
         if (ValidateConnectionRequest(client, out var clientIP, out var userName))
         {
-            UDP_ClientHandle newClient = new UDP_ClientHandle(userName, _clientIDCounter++, clientIP, 5678);
+            ClientHandle newClient = new ClientHandle(userName, _clientIDCounter++, client, clientIP, 5678);
             _clients.Add(newClient);
         }
     }
@@ -109,19 +109,19 @@ public class UDP_Server : IDisposable
     {
         List<Packet> packets = new List<Packet>();
 
-        foreach (UDP_ClientHandle clientHandle in _clients)
+        foreach (ClientHandle clientHandle in _clients)
         {
             uint clientID = clientHandle.ID;
-            uint packetID = _packetIDCounter++;
-            byte[] data = clientHandle.GetReceivedData();
+            byte[] data = new byte[1024];
+            int size = clientHandle.GetStreamedData(data);
 
-            packets.Add(new Packet(clientID, packetID, data));
+            packets.Add(new Packet(data, false, size, clientID));
         }
 
         return packets.ToArray();
     }
 
-    public UDP_ClientHandle[] GetCurrentClientHandles()
+    public ClientHandle[] GetCurrentClientHandles()
     {
         return _clients.ToArray();
     }
@@ -132,7 +132,7 @@ public class UDP_Server : IDisposable
 
         _clientRequestListener.Stop();
 
-        foreach (UDP_ClientHandle clientHandle in _clients)
+        foreach (ClientHandle clientHandle in _clients)
             clientHandle.Dispose();
 
         Disposed = true;
