@@ -14,6 +14,9 @@ public class ClientHandle : IDisposable
     private TcpClient _TCPConnection;
     private UdpClient _UDPConnection;
 
+    private Common.Network _network;
+    public bool IsConnected { get => _network?.IsConnected ?? false; }
+
     public ClientHandle(string userName, uint iD, TcpClient TCPConnection, IPEndPoint endPointIP, int localPort)
     {
         UserName = userName;
@@ -26,20 +29,19 @@ public class ClientHandle : IDisposable
 
     }
 
-    /// <summary>
-    /// Data recived through TCP
-    /// </summary>
-    /// <returns>Amount of bytes recived</returns>
-    public int GetSecuredData(byte[] buffer)
+    public int ReadSafeData(byte[] buffer)
     {
         throw new NotImplementedException();
     }
-
-    /// <summary>
-    /// Data recived through UDP
-    /// </summary>
-    /// <returns>Amount of bytes recived</returns>
-    public int GetStreamedData(byte[] buffer)
+    public int ReadUnsafeData(byte[] buffer)
+    {
+        throw new NotImplementedException();
+    }
+    public int WriteSafeData(byte[] buffer)
+    {
+        throw new NotImplementedException();
+    }
+    public int WriteUnsafeData(byte[] buffer)
     {
         throw new NotImplementedException();
     }

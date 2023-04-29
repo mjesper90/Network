@@ -116,6 +116,23 @@ public class Server : IDisposable
         }
     }
 
+    public ClientHandle[] HandleDisconnects()
+    {
+        List<ClientHandle> clientsDisconnected = new List<ClientHandle>();
+
+        for (int i = 0; i < _clients.Count; i++)
+        {
+            if (!_clients[i].IsConnected)
+            {
+                clientsDisconnected.Add(_clients[i]);
+                _clients.RemoveAt(i);
+                i--;
+            }
+        }
+
+        return clientsDisconnected.ToArray();
+    }
+
     public Packet[] HandleData()
     {
         List<Packet> packets = new List<Packet>();
