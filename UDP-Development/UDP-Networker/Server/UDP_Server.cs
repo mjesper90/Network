@@ -4,43 +4,81 @@ using UDP_Networker.Common;
 
 namespace UDP_Networker.Server;
 
+/*
+ * Server and Client connect over TCP
+ * Then the server gives the client a port to send to, and the client gives a port for the server to send to.
+ * Then we use UDP from there
+ */
+
 public class UDP_Server : IDisposable
 {
     private List<UDP_ClientHandle> _clients = new List<UDP_ClientHandle>();
     private uint _clientIDCounter = 0;
     private uint _packetIDCounter = 0;
-    private UdpClient _reciver = new UdpClient(Consts.LISTENING_PORT);
-    private IPEndPoint _listenIPEndPoint = new IPEndPoint(IPAddress.Any, Consts.LISTENING_PORT);
+    private byte[] data;
+    private TcpListener _clientRequestListener = new TcpListener(IPAddress.Any, Consts.LISTENING_PORT);
+    private IPEndPoint? _listenIPEndPoint = new IPEndPoint(IPAddress.Any, Consts.LISTENING_PORT);
 
     public bool AcceptClients { get; set; } = true;
     public bool Disposed { get; private set; } = false;
 
     public UDP_Server()
     {
-        Task.Run(HandleClients);
+        data = new byte[ConnectionRequest.SizeInBytes];
+
+        _clientRequestListener.Start();
+        _clientRequestListener.BeginAcceptSocket(HandleClientConnection, null);
     }
 
-    private void HandleClients()
+    private async void HandleClientConnection(IAsyncResult ar)
     {
-        // Listen for clients
-        _reciver.BeginReceive(HandleDataRecived, null);
-    }
+        TcpClient clientSocket = _clientRequestListener.EndAcceptTcpClient(ar);
 
-    private async void HandleDataRecived(IAsyncResult ar)
-    {
-        byte[] data = _reciver.EndReceive(ar, ref _listenIPEndPoint);
+        Logger.Log("Trying to accept client request", LogWarningLevel.Info);
 
-        if (AcceptClients)
+        if (ValidateConnectionRequest(clientSocket, out var clientIP, out var userName))
         {
-            // Now handle the data we have gotten from client
-
-            throw new NotImplementedException();
+            UDP_ClientHandle newClient = new UDP_ClientHandle(userName, _clientIDCounter++, clientIP, 5678);
+            _clients.Add(newClient);
         }
 
         while (!AcceptClients)
             await Task.Delay(1000);
 
-        _reciver.BeginReceive(HandleDataRecived, null);
+        _clientRequestListener.BeginAcceptSocket(HandleClientConnection, null);
+    }
+
+    private unsafe bool ValidateConnectionRequest(TcpClient clientSocket, out IPEndPoint clientIP, out string userName)
+    {
+        if (!AcceptClients)
+        {
+            clientSocket.Close();
+            clientIP = new IPEndPoint(0, 0);
+            userName = "";
+            return false;
+        }
+
+        var stream = clientSocket.GetStream();
+        stream.Read(data, 0, ConnectionRequest.SizeInBytes);
+
+        try
+        {
+            ConnectionRequest request = (ConnectionRequest)Serializer.DeSerialize(data);
+
+            clientIP = new IPEndPoint( request.IP, request.Port);
+            userName = request.UserName;
+
+            return true;
+        }
+        catch (Exception)
+        {
+
+            Logger.Log("Unable to connect to client", LogWarningLevel.Info);
+            clientSocket.Close();
+            clientIP = new IPEndPoint(0, 0);
+            userName = "";
+            return false;
+        }
     }
 
     public Packet[] HandleData()
@@ -60,7 +98,7 @@ public class UDP_Server : IDisposable
         return packets.ToArray();
     }
 
-    public UDP_ClientHandle[] GetCurrentClients()
+    public UDP_ClientHandle[] GetCurrentClientHandles()
     {
         return _clients.ToArray();
     }
