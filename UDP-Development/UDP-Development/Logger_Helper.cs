@@ -17,6 +17,9 @@ public class Logger_Helper
             case LogWarningLevel.Info:
                 Console.ForegroundColor = ConsoleColor.Blue;
                 break;
+            case LogWarningLevel.Succes:
+                Console.ForegroundColor = ConsoleColor.Green;
+                break;
             case LogWarningLevel.Warning:
                 Console.ForegroundColor = ConsoleColor.DarkYellow;
                 break;
@@ -30,7 +33,7 @@ public class Logger_Helper
                 break;
         }
 
-        Console.WriteLine(log.TimeSent.ToString() + ":" + log.Message);
+        Console.WriteLine($"{{{log.TimeSent.ToString("HH:mm:ss")}}} {log.Message}");
 
     }
 

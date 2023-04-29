@@ -10,7 +10,7 @@ internal class AlivePacket : Packet
     // Random bytes to verify the the connection is still alive
     private static readonly byte[] _data = { 255, 255, 128, 128, 1, 1 };
 
-    public AlivePacket(int clientID, int packetID)
+    public AlivePacket(uint clientID, uint packetID)
         : base(clientID, packetID, _data)
     {
 

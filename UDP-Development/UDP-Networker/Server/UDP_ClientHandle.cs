@@ -22,8 +22,13 @@ public class UDP_ClientHandle : IDisposable
         _reciver = new UdpClient(LocalPort);
     }
 
-    public void Dispose()
+    public byte[] GetReceivedData()
     {
         throw new NotImplementedException();
+    }
+
+    public void Dispose()
+    {
+        _reciver.Dispose();
     }
 }

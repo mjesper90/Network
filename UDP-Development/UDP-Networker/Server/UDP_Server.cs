@@ -24,59 +24,83 @@ public class UDP_Server : IDisposable
 
     public UDP_Server()
     {
-        data = new byte[ConnectionRequest.SizeInBytes];
+        Logger.Log("Starting server up", LogWarningLevel.Info);
+
+        data = new byte[1024];
 
         _clientRequestListener.Start();
-        _clientRequestListener.BeginAcceptSocket(HandleClientConnection, null);
+        Task.Run(ListenForClient);
     }
 
-    private async void HandleClientConnection(IAsyncResult ar)
+    private async void ListenForClient()
     {
-        TcpClient clientSocket = _clientRequestListener.EndAcceptTcpClient(ar);
+        while (true)
+        {
+            while (!AcceptClients && !Disposed)
+                await Task.Delay(1000);
 
-        Logger.Log("Trying to accept client request", LogWarningLevel.Info);
+            if (Disposed)
+                return;
 
-        if (ValidateConnectionRequest(clientSocket, out var clientIP, out var userName))
+            TcpClient client = await _clientRequestListener.AcceptTcpClientAsync();
+            HandleClientConnection(client);
+        }
+    }
+
+
+    private void HandleClientConnection(TcpClient client)
+    {
+        if (Disposed)
+            return;
+
+        Logger.Log("Server got TCP connection", LogWarningLevel.Info);
+
+        _ = Task.Run(ListenForClient);
+
+        if (ValidateConnectionRequest(client, out var clientIP, out var userName))
         {
             UDP_ClientHandle newClient = new UDP_ClientHandle(userName, _clientIDCounter++, clientIP, 5678);
             _clients.Add(newClient);
         }
-
-        while (!AcceptClients)
-            await Task.Delay(1000);
-
-        _clientRequestListener.BeginAcceptSocket(HandleClientConnection, null);
     }
 
-    private unsafe bool ValidateConnectionRequest(TcpClient clientSocket, out IPEndPoint clientIP, out string userName)
+    private unsafe bool ValidateConnectionRequest(TcpClient client, out IPEndPoint clientIP, out string userName)
     {
+        Logger.Log("Trying to validate client request", LogWarningLevel.Info);
+
+        clientIP = new IPEndPoint(0, 0);
+        userName = "";
+
         if (!AcceptClients)
         {
-            clientSocket.Close();
-            clientIP = new IPEndPoint(0, 0);
-            userName = "";
+            Logger.Log("Not accepting clients", LogWarningLevel.Info);
+            client.Dispose();
             return false;
         }
 
-        var stream = clientSocket.GetStream();
-        stream.Read(data, 0, ConnectionRequest.SizeInBytes);
+        var stream = client.GetStream();
+        stream.ReadTimeout = 1000; // Wait for data for one seconds
+        int bytesRead = stream.Read(data, 0, 1024);
 
         try
         {
-            ConnectionRequest request = (ConnectionRequest)Serializer.DeSerialize(data);
+            ConnectionRequest request = Serializer.DeSerialize<ConnectionRequest>(data);
 
-            clientIP = new IPEndPoint( request.IP, request.Port);
+            clientIP = new IPEndPoint(request.IP, request.Port);
             userName = request.UserName;
 
+            stream.Write(Consts.CONNECTION_ESTABLISHED);
+
+            Logger.Log($"New client added, UserName: \"{userName}\"", LogWarningLevel.Succes);
+
+            client.Dispose();
             return true;
         }
-        catch (Exception)
+        catch (Exception e)
         {
-
-            Logger.Log("Unable to connect to client", LogWarningLevel.Info);
-            clientSocket.Close();
-            clientIP = new IPEndPoint(0, 0);
-            userName = "";
+            Logger.Log("Unable to connect to client do to error", LogWarningLevel.Warning);
+            client.Dispose();
+            //throw;
             return false;
         }
     }
@@ -85,14 +109,13 @@ public class UDP_Server : IDisposable
     {
         List<Packet> packets = new List<Packet>();
 
-        for (int i = 0; i < _clients.Count; i++)
+        foreach (UDP_ClientHandle clientHandle in _clients)
         {
-            UDP_ClientHandle client = _clients[i];
-
-            uint clientID = client.ID;
+            uint clientID = clientHandle.ID;
             uint packetID = _packetIDCounter++;
+            byte[] data = clientHandle.GetReceivedData();
 
-            throw new NotImplementedException();
+            packets.Add(new Packet(clientID, packetID, data));
         }
 
         return packets.ToArray();
@@ -105,7 +128,12 @@ public class UDP_Server : IDisposable
 
     public void Dispose()
     {
-        throw new NotImplementedException();
+        Disposed = true;
+
+        _clientRequestListener.Stop();
+
+        foreach (UDP_ClientHandle clientHandle in _clients)
+            clientHandle.Dispose();
 
         Disposed = true;
     }

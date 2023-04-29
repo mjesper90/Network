@@ -11,7 +11,7 @@ public class Serializer
 {
     private static BinaryFormatter _binaryFormatter = new BinaryFormatter();
 
-    public static byte[] GetData(object obj)
+    public static byte[] GetData<T>(T obj)
     {
         using (MemoryStream ms = new MemoryStream())
         {
@@ -20,11 +20,11 @@ public class Serializer
         }
     }
 
-    public static object DeSerialize(byte[] data)
+    public static T DeSerialize<T>(byte[] data)
     {
         using (MemoryStream ms = new MemoryStream(data))
         {
-            return _binaryFormatter.Deserialize(ms);
+            return (T)_binaryFormatter.Deserialize(ms);
         }
     }
 }
