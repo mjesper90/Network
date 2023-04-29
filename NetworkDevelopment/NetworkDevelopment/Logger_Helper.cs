@@ -23,9 +23,6 @@ public class Logger_Helper
             case LogWarningLevel.Warning:
                 Console.ForegroundColor = ConsoleColor.DarkYellow;
                 break;
-            case LogWarningLevel.Critical:
-                Console.ForegroundColor = ConsoleColor.Red;
-                break;
             case LogWarningLevel.Error:
                 Console.ForegroundColor = ConsoleColor.DarkRed;
                 break;
@@ -44,7 +41,6 @@ public class Logger_Helper
         PrintLogToConsole(new Log("This is a \"Debug\" message", DateTime.Now, LogWarningLevel.Debug));
         PrintLogToConsole(new Log("This is a \"Info\" message", DateTime.Now, LogWarningLevel.Info));
         PrintLogToConsole(new Log("This is a \"Warning\" message", DateTime.Now, LogWarningLevel.Warning));
-        PrintLogToConsole(new Log("This is a \"Critical\" message", DateTime.Now, LogWarningLevel.Critical));
         PrintLogToConsole(new Log("This is a \"Error\" message", DateTime.Now, LogWarningLevel.Error));
         Logger.SetWarningLevel(LogWarningLevel.Info);
     }

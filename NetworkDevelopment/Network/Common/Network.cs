@@ -45,6 +45,7 @@ public class Network : IDisposable
     private void ThrowIfInvalidUse()
     {
         ValidateConnection();
+
         if (!IsConnected)
             throw new Exception("Can not use a network that is not connected");
         if (IsDisposed)
@@ -70,6 +71,8 @@ public class Network : IDisposable
 
     public int ReadSafeData(byte[] buffer, int amount = -1)
     {
+        ThrowIfInvalidUse();
+
         if (amount == -1)
             amount = buffer.Length;
 
@@ -86,11 +89,15 @@ public class Network : IDisposable
 
     public byte[] ReadUnsafeData()
     {
+        ThrowIfInvalidUse();
+
         return _udp.Receive(ref _localRecivePort);
     }
 
     public void WriteSafeData(byte[] buffer, int amount = -1)
     {
+        ThrowIfInvalidUse();
+
         if (amount == -1)
             amount = buffer.Length;
 
@@ -99,6 +106,8 @@ public class Network : IDisposable
 
     public void WriteUnsafeData(byte[] buffer, int amount = -1)
     {
+        ThrowIfInvalidUse();
+
         if (amount == -1)
             amount = buffer.Length;
 
@@ -107,10 +116,10 @@ public class Network : IDisposable
 
     public void Dispose()
     {
+        SendDisconnectMessage();
+
         IsDisposed = true;
         IsConnected = false;
-
-        SendDisconnectMessage();
 
         _tcp.Dispose();
         _safeStream.Dispose();

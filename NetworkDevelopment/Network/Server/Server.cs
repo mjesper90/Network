@@ -1,6 +1,7 @@
 ﻿using System.Net.Sockets;
 using System.Net;
 using Network.Common;
+using System.Threading;
 
 namespace Network.Server;
 
@@ -16,9 +17,11 @@ namespace Network.Server;
 public class Server : IDisposable
 {
     private List<ClientHandle> _clients = new List<ClientHandle>();
+    private int _clientPort = 5678; // Doing this and just adding one to the port for each client is a really bad ideer
     private uint _clientIDCounter = 0;
     private byte[] data;
     private TcpListener _clientRequestListener = new TcpListener(IPAddress.Any, Consts.LISTENING_PORT);
+    private CancellationToken cancellationToken = new CancellationToken();
     private IPEndPoint? _listenIPEndPoint = new IPEndPoint(IPAddress.Any, Consts.LISTENING_PORT);
 
     public bool AcceptClients { get; set; } = true;
@@ -43,8 +46,16 @@ public class Server : IDisposable
 
             if (Disposed)
                 return;
-
-            TcpClient client = await _clientRequestListener.AcceptTcpClientAsync();
+            TcpClient client;
+            try
+            {
+                client = await _clientRequestListener.AcceptTcpClientAsync(cancellationToken);
+            }
+            catch (SocketException e)
+            {
+                Logger.Log(e.Message, LogWarningLevel.Error);
+                return;
+            }
             HandleClientConnection(client);
         }
     }
@@ -59,7 +70,7 @@ public class Server : IDisposable
 
         if (ValidateConnectionRequest(client, out var clientIP, out var userName))
         {
-            ClientHandle newClient = new ClientHandle(userName, _clientIDCounter++, client, clientIP, 5678);
+            ClientHandle newClient = new ClientHandle(userName, _clientIDCounter++, client, clientIP, _clientPort++);
             _clients.Add(newClient);
         }
     }
@@ -125,6 +136,11 @@ public class Server : IDisposable
     {
         return _clients.ToArray();
     }
+
+    //public void SendSafeDataToAll()
+    //public void SendUnsafeDataToAll()
+    //public void SendSafeDataToClient()
+    //public void SendUnsafeDataToClient()
 
     public void Dispose()
     {

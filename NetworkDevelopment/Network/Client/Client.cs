@@ -4,13 +4,6 @@ using Network.Common;
 
 namespace Network.Client;
 
-public enum ClientState
-{
-    Standby,
-    Connecting,
-    Connected,
-}
-
 public class Client : IDisposable
 {
     private IPEndPoint _server;
@@ -18,7 +11,8 @@ public class Client : IDisposable
 
     private Common.Network? _network;
 
-    public ClientState State { get; private set; } = ClientState.Standby;
+    public bool IsConnecting { get; private set; } = false;
+    public bool IsConnected { get => _network?.IsConnected ?? false; }
     public bool Disposed { get; private set; } = false;
 
     public string UserName;
@@ -33,19 +27,16 @@ public class Client : IDisposable
 
     public void Connect(IPEndPoint serverAdress)
     {
-        if (_network is not null)
-            if (!_network.IsDisposed)
-                _network.Dispose();
+        Disconnect();
 
         _ = Task.Run(() => InternalConnectToServer(serverAdress));
     }
 
     private void InternalConnectToServer(IPEndPoint serverAdress)
     {
-        if (State != ClientState.Standby)
+        if (IsConnected || IsConnecting)
             throw new Exception("Can not connect to server when the client is allready connected or is currently connecting");
-
-        State = ClientState.Connecting;
+        IsConnecting = true;
 
         _server = serverAdress;
         TcpClient tcpClient = new TcpClient();
@@ -74,16 +65,19 @@ public class Client : IDisposable
             if (Failed)
             {
                 Logger.Log("Could not establish connection to server", LogWarningLevel.Info);
-                State = ClientState.Standby;
+                IsConnecting = false;
                 return;
             }
 
-            State = ClientState.Connected;
+            Logger.Log("Connection established to server", LogWarningLevel.Succes);
+
+            _network = new Common.Network(tcpClient, serverAdress, Consts.CLIENT_RECIVE_PORT);
+            IsConnecting = false;
             return;
         }
 
         Logger.Log("Could not connect to server", LogWarningLevel.Info);
-        State = ClientState.Standby;
+        IsConnecting = false;
     }
 
     private void ThrowIfNotConnected()
@@ -93,14 +87,20 @@ public class Client : IDisposable
 
     public void SendSafeData(byte[] data)
     {
-        if (State != ClientState.Connected)
+        if (!IsConnected)
             throw new Exception("Can not send data when not connected");
 
     }
 
     public void Disconnect()
     {
+        if (_network is null)
+            return;
+        if (_network.IsDisposed)
+            return;
 
+        _network.Dispose();
+        _network = null;
     }
 
     public void Dispose()

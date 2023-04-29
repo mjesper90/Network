@@ -10,7 +10,6 @@ public enum LogWarningLevel
     Info,
     Succes,
     Warning,
-    Critical,
     Error
 }
 
