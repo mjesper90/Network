@@ -7,40 +7,51 @@ namespace Network.Server;
 
 public class ClientHandle : IDisposable
 {
-    public string UserName;
-    public uint ID;
-    public IPEndPoint EndPointIP;
-    public int LocalPort;
-    private TcpClient _TCPConnection;
-    private UdpClient _UDPConnection;
+    public string UserName { get; init; }
+    public uint ID { get; init; }
+    public IPEndPoint EndPointIP { get; init; }
+    public int LocalPort { get; init; }
 
-    private Common.Network _network;
     public bool IsConnected { get => _network?.IsConnected ?? false; }
 
-    public ClientHandle(string userName, uint iD, TcpClient TCPConnection, IPEndPoint endPointIP, int localPort)
+    private Common.Network _network { get; init; }
+
+    public ClientHandle(string userName, uint iD, TcpClient tcpClient, IPEndPoint endPointIP, int localPort)
     {
         UserName = userName;
         ID = iD;
         EndPointIP = endPointIP;
         LocalPort = localPort;
-        _TCPConnection = TCPConnection;
-        _UDPConnection = new UdpClient(LocalPort);
-
-
+        _network = new Common.Network(tcpClient, endPointIP, localPort);
     }
 
+    /// <summary>
+    /// Read data send by the client over TCP
+    /// </summary>
     public int ReadSafeData(byte[] buffer)
     {
-        throw new NotImplementedException();
+        return _network.ReadSafeData(buffer);
     }
+
+    /// <summary>
+    /// Read data send by the client over UDP
+    /// </summary>
     public int ReadUnsafeData(byte[] buffer)
     {
         throw new NotImplementedException();
     }
-    public int WriteSafeData(byte[] buffer)
+
+    /// <summary>
+    /// Send data to client over TCP
+    /// </summary>
+    public void WriteSafeData(byte[] buffer, int amount = -1)
     {
-        throw new NotImplementedException();
+        _network.WriteSafeData(buffer, amount);
     }
+
+    /// <summary>
+    /// Send data to client over UDP
+    /// </summary>
     public int WriteUnsafeData(byte[] buffer)
     {
         throw new NotImplementedException();
@@ -48,6 +59,6 @@ public class ClientHandle : IDisposable
 
     public void Dispose()
     {
-        _UDPConnection.Dispose();
+        _network.Dispose();
     }
 }

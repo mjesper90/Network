@@ -19,6 +19,8 @@ public class Network : IDisposable
     private IPEndPoint _ipEndPoint;
     private IPEndPoint _localRecivePort;
 
+    private bool _recivedDisconnectMessage = false;
+
     public bool IsConnected { get; private set; } = false;
     public bool IsDisposed { get; private set; } = false;
 
@@ -80,6 +82,7 @@ public class Network : IDisposable
 
         if (IsDisconnectMessage(buffer, bytesCount))
         {
+            _recivedDisconnectMessage = true;
             Dispose();
             return 0;
         }
@@ -116,7 +119,8 @@ public class Network : IDisposable
 
     public void Dispose()
     {
-        SendDisconnectMessage();
+        if (!_recivedDisconnectMessage) // No need to send message back
+            SendDisconnectMessage();
 
         IsDisposed = true;
         IsConnected = false;

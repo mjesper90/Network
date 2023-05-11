@@ -25,11 +25,19 @@ public class Client : IDisposable
         UserName = userName;
     }
 
-    public void Connect(IPEndPoint serverAdress)
+    public void ConnectAsync(IPEndPoint serverAdress)
     {
         Disconnect();
 
         _ = Task.Run(() => InternalConnectToServer(serverAdress));
+    }
+
+    public /*async*/ void Connect(IPEndPoint serverAdress)
+    {
+        Disconnect();
+
+        //await Task.Run(() => InternalConnectToServer(serverAdress));
+        InternalConnectToServer(serverAdress);
     }
 
     private void InternalConnectToServer(IPEndPoint serverAdress)
@@ -47,7 +55,7 @@ public class Client : IDisposable
             // Send request
             ConnectionRequest cR = new ConnectionRequest(_localAdress.Address, Consts.CLIENT_RECIVE_PORT, UserName);
 
-            byte[] requestData = Serializer.GetData(cR);
+            byte[] requestData = Serializer.GetBytes(cR);
             var stream = tcpClient.GetStream();
 
             stream.Write(requestData);
@@ -82,14 +90,34 @@ public class Client : IDisposable
 
     private void ThrowIfNotConnected()
     {
-
-    }
-
-    public void SendSafeData(byte[] data)
-    {
         if (!IsConnected)
             throw new Exception("Can not send data when not connected");
+    }
 
+    public void WriteSafeData(byte[] data)
+    {
+        ThrowIfNotConnected();
+        _network!.WriteSafeData(data);
+    }
+
+    public void WriteUnsafeData(byte[] data)
+    {
+        ThrowIfNotConnected();
+        _network!.WriteUnsafeData(data);
+    }
+
+    public int ReadSafeData(byte[] buffer)
+    {
+        ThrowIfNotConnected();
+        int amount = _network!.ReadSafeData(buffer, buffer.Length);
+
+        if (!_network.IsConnected)
+        {
+            _network = null;
+            return -1;
+        }
+
+        return amount;
     }
 
     public void Disconnect()

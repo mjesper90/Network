@@ -8,7 +8,7 @@ using Network.Server;
 bool Running = true;
 
 Server server = new Server();
-Client client = new Client("Just somebody that i use to know");
+Client client = new Client("Yeff");
 
 Task.Run(() =>
 {
@@ -29,6 +29,36 @@ while (true)
     if (input == "try")
     {
         client.Connect(new(NetworkHelper.GetLocalIPAddress().Address, Consts.LISTENING_PORT));
+
+        if (client.IsConnected)
+        {
+            input = Console.ReadLine()!;
+            client.WriteSafeData(Serializer.GetBytes(input));
+
+            Packet[] packets = server.Update();
+
+            foreach (var packet in packets)
+            {
+                string data = Serializer.GetObject<string>(packet.Data, 0, packet.Size);
+                Console.WriteLine("Server recived: " + data);
+                data += " Hello World!";
+                Console.WriteLine("Server send: " + data);
+                foreach (var clientHandle in server.GetClientHandles())
+                {
+                    byte[] bytes = Serializer.GetBytes(data);
+                    clientHandle.WriteSafeData(bytes);
+
+                    byte[] buffer = new byte[1024];
+                    Thread.Sleep(2);
+                    int count = client.ReadSafeData(buffer);
+                    if (count < 1)
+                        continue;
+                    Console.WriteLine("Client received: " + Serializer.GetObject<string>(buffer, 0, count));
+                }
+            }
+
+
+        }
     }
 }
 

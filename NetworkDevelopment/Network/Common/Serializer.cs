@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.Serialization.Formatters.Binary;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Runtime.Serialization.Formatters.Binary;
 
 namespace Network.Common;
 
@@ -11,7 +6,7 @@ public class Serializer
 {
     private static BinaryFormatter _binaryFormatter = new BinaryFormatter();
 
-    public static byte[] GetData<T>(T obj)
+    public static byte[] GetBytes<T>(T obj)
     {
         using (MemoryStream ms = new MemoryStream())
         {
@@ -20,9 +15,11 @@ public class Serializer
         }
     }
 
-    public static T DeSerialize<T>(byte[] data)
+    public static T GetObject<T>(byte[] data, int startIndex = 0, int count = -1)
     {
-        using (MemoryStream ms = new MemoryStream(data))
+        if (count == -1)
+            count = data.Length - startIndex;
+        using (MemoryStream ms = new MemoryStream(data, startIndex, count))
         {
             return (T)_binaryFormatter.Deserialize(ms);
         }
