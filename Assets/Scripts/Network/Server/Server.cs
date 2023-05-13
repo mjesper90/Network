@@ -1,4 +1,3 @@
-using UnityEngine;
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -16,7 +15,6 @@ namespace GameServer
         public Server(int port)
         {
             Port = port;
-            Debug.Log("Server starting on port " + Port + "...");
             TCPListener = new TcpListener(IPAddress.Any, Port);
             TCPListener.Start();
             TCPListener.BeginAcceptTcpClient(new AsyncCallback(TCPAcceptCB), null);
@@ -27,15 +25,16 @@ namespace GameServer
         {
             TcpClient client = TCPListener.EndAcceptTcpClient(ar);
             TCPListener.BeginAcceptTcpClient(new AsyncCallback(TCPAcceptCB), null);
-            Debug.Log("Incoming connection from " + client.Client.RemoteEndPoint + "...");
             ServerClient serverClient = new ServerClient(client);
             Clients.Add(serverClient);
+#if UNITY_EDITOR
+            UnityEngine.Debug.Log("New client connected");
+#endif
         }
 
         //Shutdown and clear
         public void Shutdown()
         {
-            Debug.Log("Server shutting down...");
             foreach (ServerClient client in Clients)
             {
                 client.Disconnect();
@@ -51,20 +50,24 @@ namespace GameServer
             {
                 if (client.IsConnected())
                 {
-                    batch.Append(client.NetworkRef.GetBatch());
+                    batch.Append(client.NetworkHandler.GetBatch());
                 }
                 else
                 {
+#if UNITY_EDITOR
+                    UnityEngine.Debug.Log("Client disconnected ");
+#endif
                     disconnectedClients.Add(client);
                 }
             }
             Clients.RemoveAll(disconnectedClients.Contains);
 
             if (batch.Users.Length <= 0) return;
-            //Debug.Log("Sending batch of " + batch.Users.Length + "users, to clients..." + batch.Users[0].Username);
+
             foreach (ServerClient client in Clients)
             {
-                client.NetworkRef.SendBatch(batch);
+                UnityEngine.Debug.Log("Sending batch of " + batch.Users.Length + "users, to clients..." + client.NetworkHandler.UserRef.Username);
+                client.NetworkHandler.SendBatch(batch);
             }
         }
     }

@@ -23,6 +23,11 @@ namespace DTOs
             Health = health;
         }
 
+        public User(string id, string username, float x, float y, float z, float health) : this(username, x, y, z, health)
+        {
+            ID = id;
+        }
+
         public override string ToString()
         {
             return "User: " + Username + ", " + Pos.X + ", " + Pos.Y + ", " + Pos.Z + ", " + Health;

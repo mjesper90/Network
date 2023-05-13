@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using DTOs;
-using UnityEngine;
 
 namespace GameServer
 {
@@ -37,19 +36,15 @@ namespace GameServer
             if (obj is Projectile)
             {
                 Projectile projectile = (Projectile)obj;
-                //Debug.Log("Recieved projectile: " + projectile);
                 Projectiles.Add(projectile);
             }
             else if (obj is User)
             {
                 UserRef = (User)obj;
-                Debug.Log("Recieved user: " + UserRef);
-
             }
             else if (obj is Position)
             {
                 Position pos = (Position)obj;
-                //Debug.Log("Recieved position: " + pos);
                 UserRef.Pos = pos;
             }
         }
@@ -57,16 +52,6 @@ namespace GameServer
         public void SendBatch(Batch batch)
         {
             ServerClientRef.Send(ServerClientRef.Serialize(batch));
-        }
-
-        public void RecieveUser(User user)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void RecieveProjectile(Projectile projectile)
-        {
-            throw new NotImplementedException();
         }
 
         public void SendUser(User user)
