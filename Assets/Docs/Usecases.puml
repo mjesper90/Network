@@ -1,0 +1,36 @@
+@startuml
+title Network Project Use Case Diagram
+
+left to right direction
+actor Account
+actor Player
+actor Client
+actor Server
+
+Player -left-|> Account
+
+rectangle NetworkProject {
+    usecase Login
+    usecase Timeout
+    usecase Broadcast
+    usecase Disconnect
+    usecase Reconnect
+    usecase Receive
+}
+
+
+Client --> Receive
+Timeout --> Disconnect
+Account --> Login
+Login <-- Server
+Player --> Broadcast
+Player --> Disconnect
+Player --> Reconnect
+Player --> Receive
+Player --> Timeout
+Disconnect <-- Server
+Broadcast <-- Server
+Reconnect <-- Server
+Receive <-- Server
+
+@enduml
