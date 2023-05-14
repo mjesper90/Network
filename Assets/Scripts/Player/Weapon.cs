@@ -20,7 +20,7 @@ public class Weapon : MonoBehaviour
 
         Position start = new Position(Nozzle.position.x, Nozzle.position.y, Nozzle.position.z);
         Position end = new Position(Nozzle.forward.x, Nozzle.forward.y, Nozzle.forward.z);
-        Projectile proj = new Projectile(Owner.UserInfo, start, end, 1f);
+        Projectile proj = new Projectile(Owner.GetUser(), start, end, 1f);
         p.Launch(proj, local);
         return p;
     }

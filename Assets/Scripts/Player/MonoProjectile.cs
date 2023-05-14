@@ -1,9 +1,8 @@
-using System;
 using System.Collections;
-using System.Collections.Generic;
 using DTOs;
 using UnityEngine;
 
+//#TODO: Figure out what to do with this
 public class MonoProjectile : MonoBehaviour
 {
     public Projectile Projectile;

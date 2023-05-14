@@ -38,8 +38,8 @@ public class GameController : MonoBehaviour
         _cam.transform.localPosition = CONSTANTS.CameraOffset;
 
         LocalPlayer = go.GetComponent<Player>();
-        Debug.Log(LocalPlayer.UserInfo.Username + " spawned");
-        Players.Add(LocalPlayer.UserInfo.Username, go);
+        Debug.Log(LocalPlayer.GetUser().Username + " spawned");
+        Players.Add(LocalPlayer.GetUser().Username, go);
         LocalPlayer.IsLocal = true;
     }
 
@@ -73,93 +73,111 @@ public class GameController : MonoBehaviour
         return _client;
     }
 
+    public void Update()
+    {
+        while (_client.NetworkHandler.ActionQueue.Count > 0)
+        {
+            _client.NetworkHandler.ActionQueue.TryDequeue(out Batch batch);
+            BatchUpdate(batch);
+        }
+    }
+
     public void BatchUpdate(Batch batch)
     {
-        string localplayername = ClientInit.Instance.LocalPlayer.GetComponent<Player>().UserInfo.Username;
-        foreach (User user in batch.Users)
+        try
         {
-            //Update non-local players already spawned
-            if (Players.ContainsKey(user.Username))
-            {
-                Player p = Players[user.Username].GetComponent<Player>();
-                p.UserInfo.Health = user.Health;
-                if (!p.IsLocal)
-                {
-                    p.LerpMovement(new Vector3(user.Pos.X, user.Pos.Y, user.Pos.Z));
-                }
-            }
-            //Spawn new players
-            else
-            {
-                GameObject res = Resources.Load<GameObject>(CONSTANTS.PlayerPrefab);
-                GameObject player = Instantiate(res, new Vector3(user.Pos.X, user.Pos.Y, user.Pos.Z), Quaternion.identity);
-                player.GetComponent<Player>().UserInfo.Username = user.Username;
-                Debug.Log("Player " + user.Username + " spawned");
-                foreach (GameObject otherPlayer in Players.Values)
-                {
-                    //Physics.IgnoreCollision(player.GetComponent<Collider>(), otherPlayer.GetComponent<Collider>());
-                }
-                Players.Add(user.Username, player);
-            }
-        }
-
-        //Destroy players that are not in the batch, except for the local player
-        List<string> toRemove = new List<string>();
-        foreach (string key in Players.Keys)
-        {
-            bool found = false;
+            Debug.Log("Batch received " + batch.Users.Length);
+            string localplayername = LocalPlayer.GetUser().Username;
             foreach (User user in batch.Users)
             {
-                if (user.Username == key)
+                Debug.Log("User " + user.Username + " updated");
+                //Update non-local players already spawned
+                if (Players.ContainsKey(user.Username))
                 {
-                    found = true;
-                    break;
+                    Player p = Players[user.Username].GetComponent<Player>();
+                    p.GetUser().Health = user.Health;
+                    if (!p.IsLocal)
+                    {
+                        p.LerpMovement(new Vector3(user.Pos.X, user.Pos.Y, user.Pos.Z));
+                    }
+                }
+                //Spawn new players
+                else
+                {
+                    GameObject res = Resources.Load<GameObject>(CONSTANTS.PlayerPrefab);
+                    GameObject player = Instantiate(res, new Vector3(user.Pos.X, user.Pos.Y, user.Pos.Z), Quaternion.identity);
+                    player.GetComponent<Player>().GetUser().Username = user.Username;
+                    Debug.Log("Player " + user.Username + " spawned");
+                    foreach (GameObject otherPlayer in Players.Values)
+                    {
+                        //Physics.IgnoreCollision(player.GetComponent<Collider>(), otherPlayer.GetComponent<Collider>());
+                    }
+                    Players.Add(user.Username, player);
                 }
             }
-            if (!found && key != localplayername)
-            {
-                toRemove.Add(key);
-            }
-        }
-        foreach (string key in toRemove)
-        {
-            Debug.Log("Player " + key + " removed");
-            Destroy(Players[key]);
-            Players.Remove(key);
-        }
 
-        foreach (Projectile projectile in batch.Projectiles)
-        {
-            if (Projectiles.ContainsKey(projectile.ID))
+            //Destroy players that are not in the batch, except for the local player
+            List<string> toRemove = new List<string>();
+            foreach (string key in Players.Keys)
             {
-                if (projectile.Owner.Username != localplayername)
-                    Projectiles[projectile.ID].GetComponent<MonoProjectile>().LerpMovement(new Vector3(projectile.Current.X, projectile.Current.Y, projectile.Current.Z));
+                bool found = false;
+                foreach (User user in batch.Users)
+                {
+                    if (user.Username == key)
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found && key != localplayername)
+                {
+                    toRemove.Add(key);
+                }
             }
-            else
+            foreach (string key in toRemove)
             {
-                GameObject res = Resources.Load<GameObject>(CONSTANTS.ProjectilePrefab);
-                GameObject proj = Instantiate(res, new Vector3(projectile.Start.X, projectile.Start.Y, projectile.Start.Z), Quaternion.identity);
-                proj.GetComponent<MonoProjectile>().Launch(projectile);
-                Projectiles.Add(projectile.ID, proj);
+                Debug.Log("Player " + key + " removed");
+                Destroy(Players[key]);
+                Players.Remove(key);
             }
-        }
 
-        toRemove = new List<string>();
-        foreach (string key in Projectiles.Keys)
-        {
-            bool found = false;
             foreach (Projectile projectile in batch.Projectiles)
             {
-                if (projectile.ID == key)
+                if (Projectiles.ContainsKey(projectile.ID))
                 {
-                    found = true;
-                    break;
+                    if (projectile.Owner.Username != localplayername)
+                        Projectiles[projectile.ID].GetComponent<MonoProjectile>().LerpMovement(new Vector3(projectile.Current.X, projectile.Current.Y, projectile.Current.Z));
+                }
+                else
+                {
+                    GameObject res = Resources.Load<GameObject>(CONSTANTS.ProjectilePrefab);
+                    GameObject proj = Instantiate(res, new Vector3(projectile.Start.X, projectile.Start.Y, projectile.Start.Z), Quaternion.identity);
+                    proj.GetComponent<MonoProjectile>().Launch(projectile);
+                    Projectiles.Add(projectile.ID, proj);
                 }
             }
-            if (!found)
+
+            toRemove = new List<string>();
+            foreach (string key in Projectiles.Keys)
             {
-                toRemove.Add(key);
+                bool found = false;
+                foreach (Projectile projectile in batch.Projectiles)
+                {
+                    if (projectile.ID == key)
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found)
+                {
+                    toRemove.Add(key);
+                }
             }
+        }
+        catch (Exception e)
+        {
+            Debug.Log(e);
         }
     }
 }

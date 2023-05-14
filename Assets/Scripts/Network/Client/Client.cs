@@ -3,19 +3,18 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.Serialization.Formatters.Binary;
-using DTOs;
-using UnityEngine;
 
 namespace GameClient
 {
     public class Client
     {
+        public Network NetworkHandler;
+
         private int _dataBufferSize = CONSTANTS.BufferSize;
         private readonly TcpClient _socket;
         private NetworkStream _stream;
         private readonly byte[] _recieveBuffer;
         private BinaryFormatter _br;
-        private Network _network;
 
         public Client(string ip, int port)
         {
@@ -26,14 +25,8 @@ namespace GameClient
                 SendBufferSize = _dataBufferSize
             };
             _recieveBuffer = new byte[_dataBufferSize];
-            Debug.Log("Connecting to : " + IPAddress.Parse(ip));
             _socket.BeginConnect(IPAddress.Parse(ip), port, ConnectCB, null);
-            _network = new Network();
-        }
-
-        public Network GetNetwork()
-        {
-            return _network;
+            NetworkHandler = new Network();
         }
 
         public void Send(byte[] bytes)
@@ -76,10 +69,10 @@ namespace GameClient
             }
             _stream = _socket.GetStream();
 
-            _stream.BeginRead(_recieveBuffer, 0, _dataBufferSize, RecieveCB, null);
+            _stream.BeginRead(_recieveBuffer, 0, _dataBufferSize, ReceiveCB, null);
         }
 
-        private void RecieveCB(IAsyncResult ar)
+        private void ReceiveCB(IAsyncResult ar)
         {
             try
             {
@@ -89,8 +82,8 @@ namespace GameClient
                     byte[] data = new byte[_recievedLength];
                     Array.Copy(_recieveBuffer, data, _recievedLength);
                     object obj = Deserialize(data);
-                    _network.Recieve(obj);
-                    _stream.BeginRead(_recieveBuffer, 0, _dataBufferSize, RecieveCB, null);
+                    NetworkHandler.Receive(obj);
+                    _stream.BeginRead(_recieveBuffer, 0, _dataBufferSize, ReceiveCB, null);
                 }
                 else
                 {
@@ -99,16 +92,17 @@ namespace GameClient
             }
             catch (Exception e)
             {
+                Console.WriteLine($"Error recieving TCP data: {e}");
                 Disconnect();
-                Debug.Log("Error recieved TCP Data " + e.ToString());
             }
         }
 
         private void Disconnect()
         {
-            Debug.Log("Disconnected");
             _stream.Close();
             _socket.Close();
+
+            Console.WriteLine("Disconnected from server.");
         }
     }
 }
