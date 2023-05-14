@@ -27,9 +27,6 @@ namespace GameServer
             TCPListener.BeginAcceptTcpClient(new AsyncCallback(TCPAcceptCB), null);
             ServerClient serverClient = new ServerClient(client);
             Clients.Add(serverClient);
-#if UNITY_EDITOR
-            UnityEngine.Debug.Log("New client connected");
-#endif
         }
 
         //Shutdown and clear
@@ -54,9 +51,6 @@ namespace GameServer
                 }
                 else
                 {
-#if UNITY_EDITOR
-                    UnityEngine.Debug.Log("Client disconnected ");
-#endif
                     disconnectedClients.Add(client);
                 }
             }
@@ -66,7 +60,6 @@ namespace GameServer
 
             foreach (ServerClient client in Clients)
             {
-                UnityEngine.Debug.Log("Sending batch of " + batch.Users.Length + "users, to clients..." + client.NetworkHandler.UserRef.Username);
                 client.NetworkHandler.SendBatch(batch);
             }
         }

@@ -1,6 +1,5 @@
 using System.Collections;
 using DTOs;
-using GameClient;
 using UnityEngine;
 
 public class Player : MonoBehaviour
@@ -51,6 +50,22 @@ public class Player : MonoBehaviour
         }
     }
 
+    public User GetUser()
+    {
+        if (_user == null) return null;
+
+        return new User(_user.ID, _user.Username, transform.position.x, transform.position.y, transform.position.z, _user.Health);
+    }
+
+    public void Jump()
+    {
+        if (_isGrounded)
+        {
+            _rb.AddForce(Vector3.up * CONSTANTS.JumpForce, ForceMode.Impulse);
+            StartCoroutine(JumpCoroutine());
+        }
+    }
+
     private void Rotation()
     {
         //Rotate transform with mouse
@@ -58,19 +73,9 @@ public class Player : MonoBehaviour
         transform.Rotate(Vector3.up * mouseX);
     }
 
-    public void Jump()
+    private void Shoot()
     {
-        if (_isGrounded)
-        {
-            Debug.Log("Jump");
-            _rb.AddForce(Vector3.up * CONSTANTS.JumpForce, ForceMode.Impulse);
-            StartCoroutine(JumpCoroutine());
-        }
-    }
-
-    public void Shoot()
-    {
-        if (IsLocal && Weapon != null && Input.GetMouseButtonDown(0))
+        if (Weapon != null && Input.GetMouseButtonDown(0))
         {
             MonoProjectile p = Weapon.GetComponent<Weapon>().PewPew(true);
             GameController.Instance.Projectiles.Add(p.Projectile.ID, p.gameObject);
@@ -86,7 +91,6 @@ public class Player : MonoBehaviour
         {
             if (groundHit.collider.gameObject.tag == "Ground")
             {
-                Debug.Log("Grounded");
                 _isGrounded = true;
             }
         }
@@ -120,12 +124,6 @@ public class Player : MonoBehaviour
         _rb.velocity = new Vector3(movement.x, _rb.velocity.y, movement.z);
     }
 
-    public User GetUser()
-    {
-        if (_user == null) return null;
-
-        return new User(_user.ID, _user.Username, transform.position.x, transform.position.y, transform.position.z, _user.Health);
-    }
     //Jump coroutine
     private IEnumerator JumpCoroutine()
     {

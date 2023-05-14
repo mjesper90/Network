@@ -7,13 +7,25 @@ using GameClient;
 using GameServer;
 using DTOs;
 
-public class NewTestScript
+public class NetworkTesting
 {
+    private Server _server;
+    private Client _client;
+
+    [OneTimeSetUp]
+    public void OneTimeSetup()
+    {
+        //Start server
+        _server = new Server(8052);
+        //Start client
+        _client = new Client("127.0.0.1", 8052);
+    }
+
     // A Test behaves as an ordinary method
     [Test]
-    public void NewTestScriptSimplePasses()
+    public void Connectivity()
     {
-        // Use the Assert class to test conditions
+        Assert.IsTrue(_server.Clients.Count == 1);
     }
 
     // A UnityTest behaves like a coroutine in Play Mode. In Edit Mode you can use
