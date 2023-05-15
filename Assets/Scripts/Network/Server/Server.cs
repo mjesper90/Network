@@ -39,7 +39,7 @@ namespace GameServer
             TCPListener.Stop();
         }
 
-        public void Update()
+        public Batch Update()
         {
             List<ServerClient> disconnectedClients = new List<ServerClient>();
             Batch batch = new Batch(new Projectile[0], new User[0]);
@@ -56,12 +56,13 @@ namespace GameServer
             }
             Clients.RemoveAll(disconnectedClients.Contains);
 
-            if (batch.Users.Length <= 0) return;
+            if (batch.Users.Length <= 0) return batch;
 
             foreach (ServerClient client in Clients)
             {
                 client.NetworkHandler.SendBatch(batch);
             }
+            return batch;
         }
     }
 }

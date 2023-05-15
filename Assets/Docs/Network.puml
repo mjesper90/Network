@@ -21,7 +21,7 @@ namespace Network{
             + List<ServerClient> Clients
             + Server(int port)
             + void Shutdown()
-            + void Update()
+            + Batch Update()
         }
         class ServerClient{
             + TcpClient Socket
@@ -86,11 +86,10 @@ namespace other{
     }
 }
 
-Network::Common -up- Network::GameClient::Client
-Network::Common -up- Network::GameServer::Server
+
 Network::GameServer::Server "1" *-- "*" Network::GameServer::ServerClient : Clients
 Network::GameServer::ServerClient "1" *-- "1" Network::GameServer::Network : NetworkHandler
-Network::GameClient::Client "1" *-up- "1" Network::GameClient::Network : NetworkHandler
+Network::GameClient::Client "1" *- "1" Network::GameClient::Network : NetworkHandler
 
 other::GameController --> Network::GameClient::Network : Dequeue
 other::ClientInit --> Network::GameClient::Client : Initialize
