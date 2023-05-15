@@ -4,23 +4,44 @@ set separator ::
 
 namespace Network{
     namespace GameClient{
-        class ClientInit <<MonoBehaviour>> {}
-        class ExecuteOnMainthread <<MonoBehaviour>> {}
-        class Client {}
-        class Network {}
-        ClientInit --> Client
-        Client --> Network
-        Network --> ExecuteOnMainthread
+        class Client {
+            + Client(string ip, int port)
+            + void Send(object obj)
+            + void Send(byte[] bytes)
+        }
+        class Network {
+            + ConcurrentQueue<Batch> ActionQueue
+            + void Receive(object obj)
+        }
     }
     namespace GameServer{
-        class ServerInit <<MonoBehaviour>> {}
-        class Server{}
-        class Network{}
-        class ServerClient{}
-        ServerInit --> Server
-        Server --> ServerClient
-        Server --> Network
-        ServerClient --> Network
+        class Server{
+            + int Port
+            + TcpListener TCPListener
+            + List<ServerClient> Clients
+            + Server(int port)
+            + void Shutdown()
+            + void Update()
+        }
+        class ServerClient{
+            + TcpClient Socket
+            + Network NetworkHandler
+            + ServerClient(TcpClient socket)
+            + bool IsConnected()
+            + void Disconnect()
+            + void Send(byte[] bytes)
+            + object Deserialize(byte[] bytes)
+            + byte[] Serialize(object obj)
+        }
+        class Network{
+            + User UserRef
+            + List<Projectile> Projectiles
+            + Network(ServerClient serverClient)
+            + void Receive(object obj)
+            + void SendBatch(Batch batch)
+            + void Send(User user)
+            + void Send(Projectile projectile)
+        }
     }
     namespace Common{
         class Position{}
@@ -40,21 +61,40 @@ namespace Network{
 
 
 namespace other{
-    class Player <<MonoBehaviour>> {}
-    class Weapon <<MonoBehaviour>> {}
-    class GameController <<MonoBehaviour>> {}
+    class GameController <<MonoBehaviour>>{
+        + void Awake()
+        + void Start()
+        + void Update()
+        + void SetServer(Server server)
+        + void SetClient(Client client)
+        + Server GetServer()
+        + Client GetClient()
+        + void BatchUpdate(Batch batch)
+    }
+    class ClientInit <<MonoBehaviour>>{
+        + string IP = "127.0.0.1"
+        + int Port = 8052
+        + {static} ClientInit Instance
+        + void Awake()
+        + void Send(object obj)
+        # void FixedUpdate()
+    }
+    class ServerInit <<MonoBehaviour>>{
+        + void Start()
+        + void FixedUpdate()
+        + void OnApplicationQuit()
+    }
 }
 
-Network::GameServer -- Network::Common
-Network::GameClient -- Network::Common
-Network::GameClient::Network --> other::GameController
+Network::Common -up- Network::GameClient::Client
+Network::Common -up- Network::GameServer::Server
+Network::GameServer::Server "1" *-- "*" Network::GameServer::ServerClient : Clients
+Network::GameServer::ServerClient "1" *-- "1" Network::GameServer::Network : NetworkHandler
+Network::GameClient::Client "1" *-up- "1" Network::GameClient::Network : NetworkHandler
 
-note as N1
-Network related classes and namespaces
-Client and Server communicates via TCP sockets
-and the DTO's in the Common namespace
-end note
-
+other::GameController --> Network::GameClient::Network : Dequeue
+other::ClientInit --> Network::GameClient::Client : Initialize
+other::ServerInit --> Network::GameServer::Server : Initialize
 
 
 @enduml
