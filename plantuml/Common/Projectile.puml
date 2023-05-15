@@ -1,0 +1,12 @@
+@startuml
+class Projectile {
+    + ID : string
+    + Damage : float
+    + Projectile(owner:User, start:Position, end:Position, damage:float)
+    + <<override>> ToString() : string
+}
+Projectile --> "Start" Position
+Projectile --> "Current" Position
+Projectile --> "End" Position
+Projectile --> "Owner" User
+@enduml

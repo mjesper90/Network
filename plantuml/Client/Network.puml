@@ -1,0 +1,8 @@
+@startuml
+class Network {
+    + Receive(obj:object) : void
+}
+class "ConcurrentQueue`1"<T> {
+}
+Network o-> "ActionQueue<Batch>" "ConcurrentQueue`1"
+@enduml
