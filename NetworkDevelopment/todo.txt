@@ -1,0 +1,1 @@
+Add support so that when Network sends data it uses the first 4 bytes to tell how many bytes have been send, so when Network recives on the other end it know how long to make the buffer and read
