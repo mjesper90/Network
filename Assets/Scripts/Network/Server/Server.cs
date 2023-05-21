@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using DTOs;
-using GameClient;
+using NetworkLib.GameClient;
 
-namespace GameServer
+namespace NetworkLib.GameServer
 {
     public class Server
     {
@@ -22,6 +22,23 @@ namespace GameServer
             TCPListener.BeginAcceptTcpClient(new AsyncCallback(TCPAcceptCallback), null);
         }
 
+        //polling for messages
+        public void UpdateServer()
+        {
+            MatchMaking.UpdateMatches();
+            CheckClientQueues();
+        }
+
+        //Shutdown and clear
+        public void Shutdown()
+        {
+            foreach (Client client in Clients)
+            {
+                client.Disconnect();
+            }
+            TCPListener.Stop();
+        }
+
         //Accept new connection
         private void TCPAcceptCallback(IAsyncResult ar)
         {
@@ -29,13 +46,6 @@ namespace GameServer
             TCPListener.BeginAcceptTcpClient(new AsyncCallback(TCPAcceptCallback), null);
             Client client = new Client(tcp);
             Clients.Add(client);
-        }
-
-        //polling for messages
-        public void UpdateServer()
-        {
-            MatchMaking.UpdateMatches();
-            CheckClientQueues();
         }
 
         private void CheckClientQueues()
@@ -76,16 +86,6 @@ namespace GameServer
                 }
             }
             Clients.RemoveAll(disconnectedClients.Contains);
-        }
-
-        //Shutdown and clear
-        public void Shutdown()
-        {
-            foreach (Client client in Clients)
-            {
-                client.Disconnect();
-            }
-            TCPListener.Stop();
         }
     }
 }

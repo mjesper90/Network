@@ -1,36 +1,37 @@
 using System.Collections.Generic;
-using System.Linq;
-using DTOs;
-using GameClient;
+using NetworkLib.GameClient;
 
-public class MatchMaking
+namespace NetworkLib.GameServer
 {
-    public List<Match> Matches = new List<Match>();
-
-    public MatchMaking()
+    public class MatchMaking
     {
-        Matches.Add(new Match());
-    }
+        public List<Match> Matches = new List<Match>();
 
-    public void UpdateMatches()
-    {
-        foreach (Match match in Matches)
+        public MatchMaking()
         {
-            match.UpdateState();
-            Message[] messages = match.GetState();
-            foreach (Client client in match.Clients)
+            Matches.Add(new Match());
+        }
+
+        public void UpdateMatches()
+        {
+            foreach (Match match in Matches)
             {
-                client.Send(messages);
+                match.UpdateState();
+                Message[] messages = match.GetState();
+                foreach (Client client in match.Clients)
+                {
+                    client.Send(messages);
+                }
             }
         }
-    }
 
-    public void Join(Client client)
-    {
-        Matches[0].AddPlayer(client);
-        client.Send(new Message(MessageType.MatchJoined, new byte[0], ""));
-        UnityEngine.Debug.Log($"User {client.NetworkHandler.User.Username} joined match");
-        client.NetworkHandler.InGame = true;
-        client.NetworkHandler.InQueue = false;
+        public void Join(Client client)
+        {
+            Matches[0].AddPlayer(client);
+            client.Send(new Message(MessageType.MatchJoined, new byte[0], ""));
+            UnityEngine.Debug.Log($"User {client.NetworkHandler.User.Username} joined match");
+            client.NetworkHandler.InGame = true;
+            client.NetworkHandler.InQueue = false;
+        }
     }
 }
