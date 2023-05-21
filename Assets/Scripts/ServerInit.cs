@@ -1,6 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
-using GameServer;
+using NetworkLib.GameServer;
 using UnityEngine;
 
 public class ServerInit : MonoBehaviour

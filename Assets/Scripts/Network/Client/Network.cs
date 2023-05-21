@@ -1,7 +1,7 @@
 using System.Collections.Concurrent;
 using DTOs;
 
-namespace GameClient
+namespace NetworkLib.GameClient
 {
     public class Network
     {

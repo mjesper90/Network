@@ -1,6 +1,7 @@
 using System.Net.Sockets;
 using DTOs;
-using GameClient;
+using NetworkLib;
+using NetworkLib.GameClient;
 using UnityEngine;
 
 public class ClientInit : MonoBehaviour

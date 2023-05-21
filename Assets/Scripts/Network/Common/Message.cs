@@ -1,7 +1,6 @@
 using System;
-using System.Collections.Generic;
 
-namespace DTOs
+namespace NetworkLib
 {
     [Serializable]
     public class Message

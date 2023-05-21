@@ -1,11 +1,8 @@
 using System.Collections;
-using System.Collections.Generic;
 using NUnit.Framework;
-using UnityEngine;
 using UnityEngine.TestTools;
-using GameClient;
-using GameServer;
-using DTOs;
+using NetworkLib.GameClient;
+using NetworkLib.GameServer;
 using System.Net.Sockets;
 
 public class NetworkTesting

@@ -3,9 +3,9 @@ using System.IO;
 using System.Net.Sockets;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading.Tasks;
-using DTOs;
+using NetworkLib;
 
-namespace GameClient
+namespace NetworkLib.GameClient
 {
     public class Client
     {
@@ -31,45 +31,6 @@ namespace GameClient
         public bool IsConnected()
         {
             return Tcp?.Connected == true;
-        }
-
-        private void RecieveCallback(IAsyncResult ar)
-        {
-            try
-            {
-                int _recievedLength = _tcpStream.EndRead(ar);
-                if (_recievedLength > 0)
-                {
-                    byte[] data = new byte[_recievedLength];
-                    Array.Copy(_TcpReceiveBuffer, data, _recievedLength);
-                    object msg = Deserialize<object>(data);
-                    if (msg is Message)
-                    {
-                        NetworkHandler.MessageQueue.Enqueue((Message)msg);
-                    }
-                    if (msg is Message[])
-                    {
-                        foreach (Message message in (Message[])msg)
-                        {
-                            NetworkHandler.MessageQueue.Enqueue(message);
-                        }
-                    }
-                }
-                else
-                {
-                    Console.WriteLine("Client disconnected");
-                    Disconnect();
-                }
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine($"Error recieving TCP data: {e}");
-                Disconnect();
-            }
-            finally
-            {
-                _tcpStream.BeginRead(_TcpReceiveBuffer, 0, CONSTANTS.BufferSize, RecieveCallback, null);
-            }
         }
 
         public void Disconnect()
@@ -130,5 +91,45 @@ namespace GameClient
                 return ms.ToArray();
             }
         }
+
+        private void RecieveCallback(IAsyncResult ar)
+        {
+            try
+            {
+                int _recievedLength = _tcpStream.EndRead(ar);
+                if (_recievedLength > 0)
+                {
+                    byte[] data = new byte[_recievedLength];
+                    Array.Copy(_TcpReceiveBuffer, data, _recievedLength);
+                    object msg = Deserialize<object>(data);
+                    if (msg is Message)
+                    {
+                        NetworkHandler.MessageQueue.Enqueue((Message)msg);
+                    }
+                    if (msg is Message[])
+                    {
+                        foreach (Message message in (Message[])msg)
+                        {
+                            NetworkHandler.MessageQueue.Enqueue(message);
+                        }
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Client disconnected");
+                    Disconnect();
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Error recieving TCP data: {e}");
+                Disconnect();
+            }
+            finally
+            {
+                _tcpStream.BeginRead(_TcpReceiveBuffer, 0, CONSTANTS.BufferSize, RecieveCallback, null);
+            }
+        }
+
     }
 }

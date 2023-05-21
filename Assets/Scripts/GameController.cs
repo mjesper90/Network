@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Generic;
 using DTOs;
-using GameClient;
-using GameServer;
+using NetworkLib;
+using NetworkLib.GameClient;
+using NetworkLib.GameServer;
 using UnityEngine;
 
 public class GameController : MonoBehaviour

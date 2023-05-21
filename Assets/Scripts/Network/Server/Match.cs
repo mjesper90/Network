@@ -1,59 +1,60 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using DTOs;
-using GameClient;
+using NetworkLib.GameClient;
 
-public class Match
+namespace NetworkLib.GameServer
 {
-    public bool IsLive = true;
-    public List<Client> Clients = new List<Client>();
-    private ConcurrentDictionary<string, Message> _playerPositions = new ConcurrentDictionary<string, Message>();
-
-    public Match()
+    public class Match
     {
-    }
+        public List<Client> Clients = new List<Client>();
+        private ConcurrentDictionary<string, Message> _playerPositions = new ConcurrentDictionary<string, Message>();
 
-    public void AddPlayer(Client client)
-    {
-        Clients.Add(client);
-    }
-
-    public void RemovePlayer(Client client)
-    {
-        Clients.Remove(client);
-    }
-
-    public Message[] GetState()
-    {
-        return _playerPositions.Values.ToArray();
-    }
-
-    public void UpdateState()
-    {
-        foreach (Client client in Clients)
+        public Match()
         {
-            if (client.NetworkHandler.User == null) //Player not logged in?
+        }
+
+        public void AddPlayer(Client client)
+        {
+            Clients.Add(client);
+        }
+
+        public void RemovePlayer(Client client)
+        {
+            Clients.Remove(client);
+        }
+
+        public Message[] GetState()
+        {
+            return _playerPositions.Values.ToArray();
+        }
+
+        public void UpdateState()
+        {
+            foreach (Client client in Clients)
             {
-                continue;
-            }
-            while (client.NetworkHandler.MessageQueue.Count > 0)
-            {
-                if (client.NetworkHandler.MessageQueue.TryDequeue(out Message msg))
+                if (client.NetworkHandler.User == null) //Player not logged in?
                 {
-                    switch (msg.MsgType)
+                    continue;
+                }
+                while (client.NetworkHandler.MessageQueue.Count > 0)
+                {
+                    if (client.NetworkHandler.MessageQueue.TryDequeue(out Message msg))
                     {
-                        case MessageType.User:
-                            //client.NetworkHandler.User = client.Deserialize<User>(msg.Data);
-                            UnityEngine.Debug.Log("Match handling User" + client.NetworkHandler.User);
-                            break;
-                        case MessageType.PlayerPosition:
-                            _playerPositions[client.NetworkHandler.User.Username] = msg;
-                            UnityEngine.Debug.Log("Match handling PlayerPosition " + client.NetworkHandler.User.Username);
-                            break;
-                        default:
-                            UnityEngine.Debug.Log($"Unhandled message type {msg.MsgType}");
-                            break;
+                        switch (msg.MsgType)
+                        {
+                            case MessageType.User:
+                                //client.NetworkHandler.User = client.Deserialize<User>(msg.Data);
+                                UnityEngine.Debug.Log("Match handling User" + client.NetworkHandler.User);
+                                break;
+                            case MessageType.PlayerPosition:
+                                _playerPositions[client.NetworkHandler.User.Username] = msg;
+                                UnityEngine.Debug.Log("Match handling PlayerPosition " + client.NetworkHandler.User.Username);
+                                break;
+                            default:
+                                UnityEngine.Debug.Log($"Unhandled message type {msg.MsgType}");
+                                break;
+                        }
                     }
                 }
             }

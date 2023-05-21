@@ -1,99 +1,151 @@
 @startuml
 
 set separator ::
+namespace MyGame{
+    namespace Network{
+        namespace DTOs{
+            class PlayerPosition{}
+            class Position{}
+            class User{}
+        }
+        namespace GameClient{
+            class Client {
+                + TcpClient Tcp;
+                + Network NetworkHandler;
+                - NetworkStream _tcpStream;
+                - byte[] _TcpReceiveBuffer;
+                - BinaryFormatter _br;
+                + Client(TcpClient socket)
+                + bool IsConnected()
+                + void Disconnect()
+                + async Task SendAsync(byte[] bytes)
+                + async Task SendAsync(object obj)
+                + void Send(object obj)
+                + void Send(byte[] bytes)
+                + T Deserialize<T>(byte[] data)
+                + byte[] Serialize(object obj)
+                - void RecieveCallback(IAsyncResult ar)
+            }
+            class Network {
+                + Client Client
+                + User User = null
+                + bool InGame = false
+                + bool InQueue = false
+                + ConcurrentQueue<Message> ActionQueue
+                + Network(Client client)
+            }
+        }
+        namespace GameServer{
+            class Server{
+                + int Port
+                + TcpListener TCPListener
+                + List<Client> Clients
+                + MatchMaking MatchMaking
+                + Server(int port)
+                + void UpdateServer()
+                + void Shutdown()
+                - void TCPAcceptCallback(IAsyncResult ar)
+                - void CheckClientQueues()
+            }
+            class Match{
+                + List<Client> Clients
+                - ConcurrentDictionary<string, Message> _playerPositions
+                + void AddPlayer(Client client)
+                + void RemovePlayer(Client client)
+                + Message[] GetState()
+                + void UpdateState()
+            }
+            class MatchMaking{
+                + List<Match> Matches
+                + void UpdateMatches()
+                + void Join(Client client)
+            }
+        }
 
-namespace Network{
-    namespace GameClient{
-        class Client {
-            + Client(string ip, int port)
+        class Message{
+            + string Id
+            + MessageType MsgType
+            + byte[] Data
+            + string Callback
+        }
+        enum MessageType{
+            User,
+            PlayerPosition,
+            Shoot,
+            Player,
+            Update,
+            Message,
+            Login,
+            JoinQueue,
+            LoginResponse,
+            MatchJoined
+        }
+    }
+
+    struct CONSTANTS <<static>> {
+        + {static} int PORT
+        + {static} Vector3 CameraOffset
+        + {static} float Gravity
+        + {static} float ProjectileSpeed
+        + {static} float PlayerSpeed
+        + {static} float JumpForce
+    }
+
+
+    class Player <<MonoBehaviour>>{
+
+    }
+    class Enemy <<MonoBehaviour>>{
+
+    }
+    class Car <<MonoBehaviour>>{
+
+    }
+
+    class Cake <<MonoBehaviour>>{
+
+    }
+    namespace NetworkSetup{
+        class GameController <<MonoBehaviour>>{
+            + void Awake()
+            + void Start()
+            + void Update()
+            + void SetServer(Server server)
+            + void SetClient(Client client)
+            + Server GetServer()
+            + Client GetClient()
+            - void HandleMessage(Message msg)
+        }
+        class ClientInit <<MonoBehaviour>>{
+            + string IP = "127.0.0.1"
+            + int Port = 8052
+            + {static} ClientInit Instance
+            + void Awake()
             + void Send(object obj)
-            + void Send(byte[] bytes)
+            # void FixedUpdate()
         }
-        class Network {
-            + ConcurrentQueue<Batch> ActionQueue
-            + void Receive(object obj)
-        }
-    }
-    namespace GameServer{
-        class Server{
-            + int Port
-            + TcpListener TCPListener
-            + List<ServerClient> Clients
-            + Server(int port)
-            + void Shutdown()
-            + Batch Update()
-        }
-        class ServerClient{
-            + TcpClient Socket
-            + Network NetworkHandler
-            + ServerClient(TcpClient socket)
-            + bool IsConnected()
-            + void Disconnect()
-            + void Send(byte[] bytes)
-            + object Deserialize(byte[] bytes)
-            + byte[] Serialize(object obj)
-        }
-        class Network{
-            + User UserRef
-            + List<Projectile> Projectiles
-            + Network(ServerClient serverClient)
-            + void Receive(object obj)
-            + void SendBatch(Batch batch)
-            + void Send(User user)
-            + void Send(Projectile projectile)
-        }
-    }
-    namespace Common{
-        class Position{}
-        class Batch{}
-        class User{}
-        class Projectile{}
-        struct CONSTANTS <<static>> {
-            + {static} int PORT
-            + {static} Vector3 CameraOffset
-            + {static} float Gravity
-            + {static} float ProjectileSpeed
-            + {static} float PlayerSpeed
-            + {static} float JumpForce
+        class ServerInit <<MonoBehaviour>>{
+            + void Start()
+            + void FixedUpdate()
+            + void OnApplicationQuit()
         }
     }
 }
 
 
-namespace other{
-    class GameController <<MonoBehaviour>>{
-        + void Awake()
-        + void Start()
-        + void Update()
-        + void SetServer(Server server)
-        + void SetClient(Client client)
-        + Server GetServer()
-        + Client GetClient()
-        + void BatchUpdate(Batch batch)
-    }
-    class ClientInit <<MonoBehaviour>>{
-        + string IP = "127.0.0.1"
-        + int Port = 8052
-        + {static} ClientInit Instance
-        + void Awake()
-        + void Send(object obj)
-        # void FixedUpdate()
-    }
-    class ServerInit <<MonoBehaviour>>{
-        + void Start()
-        + void FixedUpdate()
-        + void OnApplicationQuit()
-    }
-}
+MyGame::Network::GameClient::Client *-- MyGame::Network::GameClient::Network
+MyGame::NetworkSetup::GameController *-- MyGame::Enemy
+MyGame::NetworkSetup::GameController *-- MyGame::Player
+MyGame::NetworkSetup::GameController *-- MyGame::Car
+MyGame::NetworkSetup::GameController *-- MyGame::Cake
+MyGame::NetworkSetup::GameController -- MyGame::Network::GameClient::Network
 
+MyGame::NetworkSetup::ClientInit *-- MyGame::Network::GameClient::Client
+MyGame::NetworkSetup::ServerInit *-- MyGame::Network::GameServer::Server
 
-Network::GameServer::Server "1" *-- "*" Network::GameServer::ServerClient : Clients
-Network::GameServer::ServerClient "1" *-- "1" Network::GameServer::Network : NetworkHandler
-Network::GameClient::Client "1" *- "1" Network::GameClient::Network : NetworkHandler
-
-other::GameController --> Network::GameClient::Network : Dequeue
-other::ClientInit --> Network::GameClient::Client : Initialize
-other::ServerInit --> Network::GameServer::Server : Initialize
+MyGame::Network::GameServer::Server *-- MyGame::Network::GameServer::MatchMaking
+MyGame::Network::GameServer::MatchMaking *-- MyGame::Network::GameServer::Match
+MyGame::Network::GameServer::Match *-- MyGame::Network::GameClient::Client
 
 
 @enduml
