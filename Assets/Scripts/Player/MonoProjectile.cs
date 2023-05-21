@@ -5,13 +5,11 @@ using UnityEngine;
 //#TODO: Figure out what to do with this
 public class MonoProjectile : MonoBehaviour
 {
-    public Projectile Projectile;
 
-    public void Launch(Projectile p, bool local = false)
+    public void Launch(bool local = false)
     {
-        Projectile = p;
         if (local)
-            GetComponent<Rigidbody>().AddForce(new Vector3(p.End.X, p.End.Y, p.End.Z) * CONSTANTS.ProjectileSpeed);
+            
         Destroy(gameObject, 5f);
     }
 

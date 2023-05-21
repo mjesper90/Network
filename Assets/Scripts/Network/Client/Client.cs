@@ -1,92 +1,63 @@
 using System;
 using System.IO;
-using System.Net;
 using System.Net.Sockets;
 using System.Runtime.Serialization.Formatters.Binary;
+using System.Threading.Tasks;
+using DTOs;
 
 namespace GameClient
 {
     public class Client
     {
+        public TcpClient Tcp;
         public Network NetworkHandler;
 
-        private int _dataBufferSize = CONSTANTS.BufferSize;
-        private readonly TcpClient _socket;
-        private NetworkStream _stream;
-        private readonly byte[] _recieveBuffer;
+        private NetworkStream _tcpStream;
+        private byte[] _TcpReceiveBuffer;
         private BinaryFormatter _br;
 
-        public Client(string ip, int port)
+        public Client(TcpClient socket)
         {
             _br = new BinaryFormatter();
-            _socket = new TcpClient
-            {
-                ReceiveBufferSize = _dataBufferSize,
-                SendBufferSize = _dataBufferSize
-            };
-            _recieveBuffer = new byte[_dataBufferSize];
-            _socket.BeginConnect(IPAddress.Parse(ip), port, ConnectCB, null);
-            NetworkHandler = new Network();
+            NetworkHandler = new Network(this);
+            Tcp = socket;
+            Tcp.ReceiveBufferSize = CONSTANTS.BufferSize;
+            Tcp.SendBufferSize = CONSTANTS.BufferSize;
+            _tcpStream = Tcp.GetStream();
+            _TcpReceiveBuffer = new byte[CONSTANTS.BufferSize];
+            _tcpStream.BeginRead(_TcpReceiveBuffer, 0, CONSTANTS.BufferSize, RecieveCallback, null);
         }
 
-        public void Send(byte[] bytes)
+        public bool IsConnected()
         {
-            if (_stream.CanWrite)
-            {
-                _stream.Write(bytes, 0, bytes.Length);
-            }
+            return Tcp?.Connected == true;
         }
 
-        public void Send(object obj)
-        {
-            byte[] bytes = Serialize(obj);
-            Send(bytes);
-        }
-
-        private object Deserialize(byte[] data)
-        {
-            using (MemoryStream ms = new MemoryStream(data))
-            {
-                return _br.Deserialize(ms);
-            }
-        }
-
-        private byte[] Serialize(object obj)
-        {
-            using (MemoryStream ms = new MemoryStream())
-            {
-                _br.Serialize(ms, obj);
-                return ms.ToArray();
-            }
-        }
-
-        private void ConnectCB(IAsyncResult ar)
-        {
-            _socket.EndConnect(ar);
-            if (!_socket.Connected)
-            {
-                return;
-            }
-            _stream = _socket.GetStream();
-
-            _stream.BeginRead(_recieveBuffer, 0, _dataBufferSize, ReceiveCB, null);
-        }
-
-        private void ReceiveCB(IAsyncResult ar)
+        private void RecieveCallback(IAsyncResult ar)
         {
             try
             {
-                int _recievedLength = _stream.EndRead(ar);
+                int _recievedLength = _tcpStream.EndRead(ar);
                 if (_recievedLength > 0)
                 {
                     byte[] data = new byte[_recievedLength];
-                    Array.Copy(_recieveBuffer, data, _recievedLength);
-                    object obj = Deserialize(data);
-                    NetworkHandler.Receive(obj);
-                    _stream.BeginRead(_recieveBuffer, 0, _dataBufferSize, ReceiveCB, null);
+                    Array.Copy(_TcpReceiveBuffer, data, _recievedLength);
+                    object msg = Deserialize<object>(data);
+                    if (msg is Message)
+                    {
+                        NetworkHandler.MessageQueue.Enqueue((Message)msg);
+                    }
+                    if (msg is Message[])
+                    {
+                        foreach (Message message in (Message[])msg)
+                        {
+                            NetworkHandler.MessageQueue.Enqueue(message);
+                        }
+                    }
                 }
                 else
                 {
+                    Console.WriteLine("Client disconnected");
                     Disconnect();
                 }
             }
@@ -95,14 +66,69 @@ namespace GameClient
                 Console.WriteLine($"Error recieving TCP data: {e}");
                 Disconnect();
             }
+            finally
+            {
+                _tcpStream.BeginRead(_TcpReceiveBuffer, 0, CONSTANTS.BufferSize, RecieveCallback, null);
+            }
         }
 
-        private void Disconnect()
+        public void Disconnect()
         {
-            _stream.Close();
-            _socket.Close();
+            Tcp?.Close();
+            Tcp = null;
+            _tcpStream = null;
+            _TcpReceiveBuffer = new byte[CONSTANTS.BufferSize];
+        }
 
-            Console.WriteLine("Disconnected from server.");
+        public async Task SendAsync(byte[] bytes)
+        {
+            if (_tcpStream.CanWrite)
+            {
+                await _tcpStream.WriteAsync(bytes, 0, bytes.Length);
+            }
+        }
+
+        public async Task SendAsync(object obj)
+        {
+            if (_tcpStream.CanWrite)
+            {
+                byte[] bytes = Serialize(obj);
+                await _tcpStream.WriteAsync(bytes, 0, bytes.Length);
+            }
+        }
+
+        public void Send(object obj)
+        {
+            if (_tcpStream.CanWrite)
+            {
+                byte[] bytes = Serialize(obj);
+                _tcpStream.Write(bytes, 0, bytes.Length);
+            }
+        }
+
+        public void Send(byte[] bytes)
+        {
+            if (_tcpStream.CanWrite)
+            {
+                _tcpStream.Write(bytes, 0, bytes.Length);
+            }
+        }
+
+        public T Deserialize<T>(byte[] data)
+        {
+            using (MemoryStream ms = new MemoryStream(data))
+            {
+                return (T)_br.Deserialize(ms);
+            }
+        }
+
+        public byte[] Serialize(object obj)
+        {
+            using (MemoryStream ms = new MemoryStream())
+            {
+                _br.Serialize(ms, obj);
+                return ms.ToArray();
+            }
         }
     }
 }

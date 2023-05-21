@@ -6,6 +6,7 @@ using UnityEngine.TestTools;
 using GameClient;
 using GameServer;
 using DTOs;
+using System.Net.Sockets;
 
 public class NetworkTesting
 {
@@ -18,7 +19,7 @@ public class NetworkTesting
         //Start server
         _server = new Server(8052);
         //Start client
-        _client = new Client("127.0.0.1", 8052);
+        _client = new Client(new TcpClient("127.0.0.1", 8052));
     }
 
     // A Test behaves as an ordinary method

@@ -5,26 +5,16 @@ namespace GameClient
 {
     public class Network
     {
-        public ConcurrentQueue<Batch> ActionQueue = new ConcurrentQueue<Batch>();
+        public Client Client;
+        public User User = null;
+        public bool InGame = false;
+        public bool InQueue = false;
 
-        public void Receive(object obj)
+        public ConcurrentQueue<Message> MessageQueue = new ConcurrentQueue<Message>();
+
+        public Network(Client client)
         {
-            if (obj is Batch batch)
-            {
-                ActionQueue.Enqueue(batch);
-            }
-            if (obj is Projectile)
-            {
-                Projectile projectile = (Projectile)obj;
-            }
-            else if (obj is Projectile[])
-            {
-                Projectile[] projectiles = (Projectile[])obj;
-            }
-            else if (obj is User)
-            {
-                User user = (User)obj;
-            }
+            Client = client;
         }
     }
 }

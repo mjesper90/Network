@@ -22,4 +22,7 @@ public static class CONSTANTS
     public static readonly string PlayerPrefab = "Prefabs/Player";
     public static readonly string ProjectilePrefab = "Prefabs/Projectile";
     public static readonly string WeaponPrefab = "Prefabs/Weapon";
+
+    //Matchmaking
+    public static readonly int MaxPlayersPerMatch = 2;
 }
