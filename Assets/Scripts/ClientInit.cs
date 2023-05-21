@@ -1,4 +1,5 @@
 using System.Net.Sockets;
+using System.Threading.Tasks;
 using DTOs;
 using NetworkLib;
 using NetworkLib.GameClient;
@@ -35,7 +36,7 @@ public class ClientInit : MonoBehaviour
         if (_client?.IsConnected() == true && _localPlayer?.InGame == true)
         {
             PlayerPosition player = new PlayerPosition(_localPlayer.GetUser().Username, _localPlayer.transform.position.x, _localPlayer.transform.position.y, _localPlayer.transform.position.z);
-            _client.Send(new Message(MessageType.PlayerPosition, _client.Serialize(player), ""));
+            _ = _client.SendAsync(new Message(MessageType.PlayerPosition, _client.Serialize(player), ""));
         }
         else
         {
