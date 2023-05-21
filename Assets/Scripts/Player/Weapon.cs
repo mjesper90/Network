@@ -18,10 +18,7 @@ public class Weapon : MonoBehaviour
         GameObject projectile = Instantiate(_projectilePrefab, Nozzle.position, Nozzle.rotation);
         MonoProjectile p = projectile.GetComponent<MonoProjectile>();
 
-        Position start = new Position(Nozzle.position.x, Nozzle.position.y, Nozzle.position.z);
-        Position end = new Position(Nozzle.forward.x, Nozzle.forward.y, Nozzle.forward.z);
-        Projectile proj = new Projectile(Owner.GetUser(), start, end, 1f);
-        p.Launch(proj, local);
+        p.Launch(local);
         return p;
     }
 }

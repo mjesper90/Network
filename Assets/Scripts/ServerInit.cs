@@ -6,6 +6,7 @@ using UnityEngine;
 public class ServerInit : MonoBehaviour
 {
     private Server _server;
+    private float cooldown;
     public int Port = CONSTANTS.Port;
 
     // Start is called before the first frame update
@@ -20,12 +21,11 @@ public class ServerInit : MonoBehaviour
 #endif
     }
 
-    float cooldown;
     void FixedUpdate()
     {
         if (_server != null && cooldown <= 0)
         {
-            _server.Update();
+            _server.UpdateServer();
             cooldown = CONSTANTS.ServerSpeed;
         }
         else

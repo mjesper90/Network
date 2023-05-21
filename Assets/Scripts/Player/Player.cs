@@ -7,6 +7,8 @@ public class Player : MonoBehaviour
     public Weapon Weapon;
     public bool IsLocal = false;
 
+    public bool InGame = false;
+    public bool LoggedIn = false;
     private Rigidbody _rb;
     private bool _isGrounded = false;
     private User _user = null;
@@ -14,14 +16,14 @@ public class Player : MonoBehaviour
     public void Awake()
     {
         _rb = GetComponent<Rigidbody>();
-        _user = new User("Player_" + Random.Range(0, 1000), transform.position.x, transform.position.y, transform.position.z, 100f);
+        _user = new User("Player_" + Random.Range(0, 1000));
 
         if (GameController.Instance.Players.Count == 0)
         {
         }
         else
         {
-            //Change color
+            //Change color on other players
             GetComponentInChildren<Renderer>().material.color = Color.red;
         }
         Weapon = Instantiate(Resources.Load(CONSTANTS.WeaponPrefab) as GameObject, transform.position, transform.rotation).GetComponent<Weapon>();
@@ -50,11 +52,14 @@ public class Player : MonoBehaviour
         }
     }
 
-    public User GetUser()
+    public void SetUser(DTOs.User user)
     {
-        if (_user == null) return null;
+        _user = user;
+    }
 
-        return new User(_user.ID, _user.Username, transform.position.x, transform.position.y, transform.position.z, _user.Health);
+    public DTOs.User GetUser()
+    {
+        return _user;
     }
 
     public void Jump()
@@ -78,8 +83,6 @@ public class Player : MonoBehaviour
         if (Weapon != null && Input.GetMouseButtonDown(0))
         {
             MonoProjectile p = Weapon.GetComponent<Weapon>().PewPew(true);
-            GameController.Instance.Projectiles.Add(p.Projectile.ID, p.gameObject);
-            ClientInit.Instance.Send(p.Projectile);
         }
     }
 

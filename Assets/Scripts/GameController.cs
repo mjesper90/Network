@@ -53,6 +53,32 @@ public class GameController : MonoBehaviour
         _client = client;
     }
 
+    private void PlayerReceived(PlayerPosition user)
+    {
+        try
+        {
+            if (Players.ContainsKey(user.Username))
+            {
+                if (user.Username != LocalPlayer.GetUser().Username)
+                {
+                    Players[user.Username].GetComponent<Player>().LerpMovement(new Vector3(user.Pos.X, user.Pos.Y, user.Pos.Z));
+                }
+            }
+            else
+            {
+                GameObject go = Instantiate(Resources.Load(CONSTANTS.PlayerPrefab), new Vector3(user.Pos.X, user.Pos.Y, user.Pos.Z), Quaternion.identity) as GameObject;
+                Players.Add(user.Username, go);
+                Player p = go.GetComponent<Player>();
+                p.SetUser(new User(user.ID, user.Username));
+                Debug.Log("Player " + user.Username + " spawned");
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.Log(e.Message);
+        }
+    }
+
     public Server GetServer()
     {
         if (_server == null)
@@ -75,109 +101,44 @@ public class GameController : MonoBehaviour
 
     public void Update()
     {
-        while (_client.NetworkHandler.ActionQueue.Count > 0)
+        while (_client.NetworkHandler.MessageQueue.Count > 0)
         {
-            _client.NetworkHandler.ActionQueue.TryDequeue(out Batch batch);
-            BatchUpdate(batch);
+            _client.NetworkHandler.MessageQueue.TryDequeue(out Message msg);
+            HandleMessage(msg);
         }
     }
 
-    public void BatchUpdate(Batch batch)
+    private void HandleMessage(Message msg)
     {
-        try
+        switch (msg.MsgType)
         {
-            Debug.Log("Batch received " + batch.Users.Length);
-            string localplayername = LocalPlayer.GetUser().Username;
-            foreach (User user in batch.Users)
-            {
-                Debug.Log("User " + user.Username + " updated");
-                //Update non-local players already spawned
-                if (Players.ContainsKey(user.Username))
-                {
-                    Player p = Players[user.Username].GetComponent<Player>();
-                    p.GetUser().Health = user.Health;
-                    if (!p.IsLocal)
-                    {
-                        p.LerpMovement(new Vector3(user.Pos.X, user.Pos.Y, user.Pos.Z));
-                    }
-                }
-                //Spawn new players
-                else
-                {
-                    GameObject res = Resources.Load<GameObject>(CONSTANTS.PlayerPrefab);
-                    GameObject player = Instantiate(res, new Vector3(user.Pos.X, user.Pos.Y, user.Pos.Z), Quaternion.identity);
-                    player.GetComponent<Player>().GetUser().Username = user.Username;
-                    Debug.Log("Player " + user.Username + " spawned");
-                    foreach (GameObject otherPlayer in Players.Values)
-                    {
-                        //Physics.IgnoreCollision(player.GetComponent<Collider>(), otherPlayer.GetComponent<Collider>());
-                    }
-                    Players.Add(user.Username, player);
-                }
-            }
-
-            //Destroy players that are not in the batch, except for the local player
-            List<string> toRemove = new List<string>();
-            foreach (string key in Players.Keys)
-            {
-                bool found = false;
-                foreach (User user in batch.Users)
-                {
-                    if (user.Username == key)
-                    {
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found && key != localplayername)
-                {
-                    toRemove.Add(key);
-                }
-            }
-            foreach (string key in toRemove)
-            {
-                Debug.Log("Player " + key + " removed");
-                Destroy(Players[key]);
-                Players.Remove(key);
-            }
-
-            foreach (Projectile projectile in batch.Projectiles)
-            {
-                if (Projectiles.ContainsKey(projectile.ID))
-                {
-                    if (projectile.Owner.Username != localplayername)
-                        Projectiles[projectile.ID].GetComponent<MonoProjectile>().LerpMovement(new Vector3(projectile.Current.X, projectile.Current.Y, projectile.Current.Z));
-                }
-                else
-                {
-                    GameObject res = Resources.Load<GameObject>(CONSTANTS.ProjectilePrefab);
-                    GameObject proj = Instantiate(res, new Vector3(projectile.Start.X, projectile.Start.Y, projectile.Start.Z), Quaternion.identity);
-                    proj.GetComponent<MonoProjectile>().Launch(projectile);
-                    Projectiles.Add(projectile.ID, proj);
-                }
-            }
-
-            toRemove = new List<string>();
-            foreach (string key in Projectiles.Keys)
-            {
-                bool found = false;
-                foreach (Projectile projectile in batch.Projectiles)
-                {
-                    if (projectile.ID == key)
-                    {
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found)
-                {
-                    toRemove.Add(key);
-                }
-            }
+            case MessageType.LoginResponse:
+                Debug.Log("Login response received");
+                LocalPlayer.LoggedIn = true;
+                _client.Send(new Message(MessageType.JoinQueue, new byte[0], ""));
+                break;
+            case MessageType.Message:
+                Debug.Log("Message received " + _client.Deserialize<string>(msg.Data));
+                break;
+            case MessageType.User:
+                User user = _client.Deserialize<User>(msg.Data);
+                UserReceived(user);
+                break;
+            case MessageType.PlayerPosition:
+                PlayerPosition player = _client.Deserialize<PlayerPosition>(msg.Data);
+                PlayerReceived(player);
+                break;
+            case MessageType.MatchJoined:
+                LocalPlayer.InGame = true;
+                break;
+            default:
+                Debug.Log("Unknown message type");
+                break;
         }
-        catch (Exception e)
-        {
-            Debug.Log(e);
-        }
+    }
+
+    private void UserReceived(User user)
+    {
+        Players[user.Username].GetComponent<Player>().SetUser(user);
     }
 }

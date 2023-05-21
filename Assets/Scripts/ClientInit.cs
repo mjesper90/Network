@@ -1,9 +1,7 @@
-using System.Linq;
 using System.Net.Sockets;
 using DTOs;
 using GameClient;
 using UnityEngine;
-
 
 public class ClientInit : MonoBehaviour
 {
@@ -33,6 +31,19 @@ public class ClientInit : MonoBehaviour
 
     protected void FixedUpdate()
     {
+        if (_client?.IsConnected() == true && _localPlayer?.InGame == true)
+        {
+            PlayerPosition player = new PlayerPosition(_localPlayer.GetUser().Username, _localPlayer.transform.position.x, _localPlayer.transform.position.y, _localPlayer.transform.position.z);
+            _client.Send(new Message(MessageType.PlayerPosition, _client.Serialize(player), ""));
+        }
+        else
+        {
+            TryLogin();
+        }
+    }
+
+    private void TryLogin()
+    {
         if (_client == null && GameController.Instance.LocalPlayer != null)
         {
             _localPlayer = GameController.Instance.LocalPlayer;
@@ -40,23 +51,15 @@ public class ClientInit : MonoBehaviour
 
             if (_localPlayer?.GetUser() != null)
             {
-                _client = new Client(IP, Port);
+                _client = new Client(new TcpClient(IP, Port));
                 Debug.Log("Client started");
-                _client.Send(_localPlayer.GetUser());
                 GameController.Instance.SetClient(_client);
+                _client.Send(new Message(MessageType.Login, _client.Serialize(_localPlayer.GetUser()), ""));
             }
             else
             {
                 Debug.Log("Local player not found");
             }
-        }
-        else if (_client != null)
-        {
-            _client.Send(new Position(_localPlayer.transform.position));
-        }
-        else
-        {
-            Debug.Log("Client not connected");
         }
     }
 }
