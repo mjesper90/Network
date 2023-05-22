@@ -151,7 +151,7 @@ public class Server : IDisposable
         return ClientsDisconnected;
     }
 
-    private bool GetPacketFromClient(in ClientHandle client, List<Packet> packets)
+    private bool GetPacketFromClient(in ClientHandle client, List<ServerPacket> packets)
     {
         if (!client.IsConnected)
             return false;
@@ -171,9 +171,9 @@ public class Server : IDisposable
     /// <summary>
     /// Check for disconnects and return recived packets from clients
     /// </summary>
-    public Packet[] Update()
+    public ServerPacket[] Update()
     {
-        List<Packet> packets = new List<Packet>();
+        List<ServerPacket> packets = new List<ServerPacket>();
         var tempClients = _clients.Values;
         foreach (ClientHandle clientHandle in tempClients)
         {
@@ -193,7 +193,7 @@ public class Server : IDisposable
         return _clients.Values.ToArray();
     }
 
-    public void SendDataToAllClients(Packet packet)
+    public void SendPacketToAllClients(Packet packet)
     {
         var tempClients = _clients.Values;
         foreach (ClientHandle clientHandle in tempClients)
@@ -205,7 +205,7 @@ public class Server : IDisposable
         }
     }
 
-    public bool SendDataToClient(uint ID, Packet packet)
+    public bool SendPacketToClient(uint ID, Packet packet)
     {
         ClientHandle client = _clients[ID];
         if (!CheckClientConnection(client))

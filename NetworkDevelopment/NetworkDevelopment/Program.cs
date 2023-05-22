@@ -4,6 +4,7 @@ using Network;
 using Network.Client;
 using Network.Common;
 using Network.Server;
+using UDP_Networker.Server;
 
 bool Running = true;
 
@@ -38,7 +39,7 @@ while (true)
 
             //Thread.Sleep(1000);
 
-            Packet[] packets = server.Update();
+            ServerPacket[] packets = server.Update();
 
             foreach (var packet in packets)
             {
@@ -47,10 +48,10 @@ while (true)
                 data += " Hello World!";
                 Console.WriteLine("Server send: " + data);
 
-                foreach (var Packet in server.Update())
+                foreach (var newPacket in server.Update())
                 {
                     Packet bytes = Serializer.GetPacket(data);
-                    clientHandle.SendPacket(bytes.ChangeSafty(false));
+                    server.SendPacketToClient(newPacket.ClientID, bytes.ChangeSafty(false));
 
                     Thread.Sleep(2);
                     Packet[] bytesRecived = client.ReadSafeData();
