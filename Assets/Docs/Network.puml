@@ -2,11 +2,21 @@
 
 set separator ::
 namespace MyGame{
-    namespace Network{
-        namespace DTOs{
-            class PlayerPosition{}
-            class Position{}
-            class User{}
+    namespace DTOs{
+        class PlayerPosition{}
+        class Position{}
+        class User{}
+    }
+    namespace NetworkLib{
+        interface IClient{}
+        interface IServer{}
+        namespace Logger{
+            interface ILogNetwork{
+                + ILogNetwork Instance();
+                + void Log(string message);
+                + void LogWarning(string message);
+                + void LogError(string message);
+            }
         }
         namespace GameClient{
             class Client {
@@ -61,7 +71,6 @@ namespace MyGame{
                 + void Join(Client client)
             }
         }
-
         class Message{
             + string Id
             + MessageType MsgType
@@ -91,18 +100,10 @@ namespace MyGame{
         + {static} float JumpForce
     }
 
-
     class Player <<MonoBehaviour>>{
 
     }
     class Enemy <<MonoBehaviour>>{
-
-    }
-    class Car <<MonoBehaviour>>{
-
-    }
-
-    class Cake <<MonoBehaviour>>{
 
     }
     namespace NetworkSetup{
@@ -129,23 +130,31 @@ namespace MyGame{
             + void FixedUpdate()
             + void OnApplicationQuit()
         }
+        class UnityLogger <<MonoBehaviour>>{
+            + void Awake()
+            + void Log(string message)
+            + void LogWarning(string message)
+            + void LogError(string message)
+        }
     }
 }
 
 
-MyGame::Network::GameClient::Client *-- MyGame::Network::GameClient::Network
+MyGame::NetworkLib::GameClient::Client *-- MyGame::NetworkLib::GameClient::Network
 MyGame::NetworkSetup::GameController *-- MyGame::Enemy
 MyGame::NetworkSetup::GameController *-- MyGame::Player
-MyGame::NetworkSetup::GameController *-- MyGame::Car
-MyGame::NetworkSetup::GameController *-- MyGame::Cake
-MyGame::NetworkSetup::GameController -- MyGame::Network::GameClient::Network
+MyGame::NetworkSetup::GameController -- MyGame::NetworkLib::GameClient::Network
 
-MyGame::NetworkSetup::ClientInit *-- MyGame::Network::GameClient::Client
-MyGame::NetworkSetup::ServerInit *-- MyGame::Network::GameServer::Server
+MyGame::NetworkSetup::ClientInit *-- MyGame::NetworkLib::IClient
+MyGame::NetworkSetup::ServerInit *-- MyGame::NetworkLib::IServer
 
-MyGame::Network::GameServer::Server *-- MyGame::Network::GameServer::MatchMaking
-MyGame::Network::GameServer::MatchMaking *-- MyGame::Network::GameServer::Match
-MyGame::Network::GameServer::Match *-- MyGame::Network::GameClient::Client
+MyGame::NetworkLib::GameServer::Server *-- MyGame::NetworkLib::GameServer::MatchMaking
+MyGame::NetworkLib::GameServer::MatchMaking *-- MyGame::NetworkLib::GameServer::Match
+MyGame::NetworkLib::GameServer::Match *-- MyGame::NetworkLib::GameClient::Client
 
+MyGame::NetworkLib::Logger::ILogNetwork <|-- MyGame::NetworkSetup::UnityLogger
+
+MyGame::NetworkLib::IClient <|-- MyGame::NetworkLib::GameClient::Client
+MyGame::NetworkLib::IServer <|-- MyGame::NetworkLib::GameServer::Server
 
 @enduml
