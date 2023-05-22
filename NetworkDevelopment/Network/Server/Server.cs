@@ -129,6 +129,19 @@ public class Server : IDisposable
         Logger.Log($"Disconnected client:\nID:{client.ID}\nUsername:{client.UserName}", LogWarningLevel.Info);
     }
 
+    private bool CheckClientConnection(ClientHandle client)
+    {
+        if (client.IsConnected)
+        {
+            return true;
+        }
+        else
+        {
+            HandleDisconnectedClient(client);
+            return false;
+        }
+    }
+
     public ClientHandle[] GetDisconnectedClients()
     {
         var ClientsDisconnected = _clientsDisconnected.ToArray();
@@ -189,8 +202,20 @@ public class Server : IDisposable
 
     //public void SendSafeDataToAll()
     //public void SendUnsafeDataToAll()
-    //public void SendSafeDataToClient(int ID)
-    //public void SendUnsafeDataToClient(int ID)
+
+    public bool SendSafeDataToClient(uint ID, byte[] buffer, int amount = -1)
+    {
+        ClientHandle client = _clients[ID];
+        if (!CheckClientConnection(client))
+            return false;
+
+        if (amount == -1)
+            amount = buffer.Length;
+        _clients[ID].WriteSafeData(buffer, amount);
+        return true;
+    }
+
+    //public void SendUnsafeDataToClient(uint ID)
 
     public void Dispose()
     {
