@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Linq;
 using NetworkLib.GameClient;
 
@@ -16,28 +15,28 @@ namespace NetworkLib.GameServer
 
         public void AddPlayer(Client client)
         {
-            Clients.TryAdd(client.NetworkHandler.User.Username, client);
+            Clients.TryAdd(client.NetworkHandler.Conn.Username, client);
 
             // Notify other clients in the match about the new player
             foreach (Client c in Clients.Values)
             {
-                if (c.NetworkHandler.User.Username != client.NetworkHandler.User.Username)
+                if (c.NetworkHandler.Conn.Username != client.NetworkHandler.Conn.Username)
                 {
-                    _ = c.SendAsync(new Message(MessageType.PlayerJoined, c.Serialize(client.NetworkHandler.User.Username), ""));
+                    _ = c.SendAsync(new Message(MessageType.PlayerJoined, c.Serialize(client.NetworkHandler.Conn.Username), ""));
                 }
             }
         }
 
         public void RemovePlayer(Client client)
         {
-            Clients.TryRemove(client.NetworkHandler.User.Username, out Client removedClient);
+            Clients.TryRemove(client.NetworkHandler.Conn.Username, out Client removedClient);
 
             // Notify other clients in the match about the removed player
             foreach (Client c in Clients.Values)
             {
-                if (c.NetworkHandler.User.Username != client.NetworkHandler.User.Username)
+                if (c.NetworkHandler.Conn.Username != client.NetworkHandler.Conn.Username)
                 {
-                    _ = c.SendAsync(new Message(MessageType.PlayerLeft, c.Serialize(client.NetworkHandler.User.Username), ""));
+                    _ = c.SendAsync(new Message(MessageType.PlayerLeft, c.Serialize(client.NetworkHandler.Conn.Username), ""));
                 }
             }
         }
@@ -51,7 +50,7 @@ namespace NetworkLib.GameServer
         {
             foreach (Client client in Clients.Values)
             {
-                if (client.NetworkHandler.User == null) //Player not logged in?
+                if (client.NetworkHandler.Conn == null) //Player not logged in?
                 {
                     continue;
                 }
@@ -63,11 +62,11 @@ namespace NetworkLib.GameServer
                         {
                             case MessageType.User:
                                 //client.NetworkHandler.User = client.Deserialize<User>(msg.Data);
-                                UnityEngine.Debug.Log("Match handling User" + client.NetworkHandler.User);
+                                UnityEngine.Debug.Log("Match handling User" + client.NetworkHandler.Conn);
                                 break;
                             case MessageType.PlayerPosition:
-                                _playerPositions[client.NetworkHandler.User.Username] = msg;
-                                UnityEngine.Debug.Log("Match handling PlayerPosition " + client.NetworkHandler.User.Username);
+                                _playerPositions[client.NetworkHandler.Conn.Username] = msg;
+                                UnityEngine.Debug.Log("Match handling PlayerPosition " + client.NetworkHandler.Conn.Username);
                                 break;
                             default:
                                 UnityEngine.Debug.Log($"Unhandled message type {msg.MsgType}");

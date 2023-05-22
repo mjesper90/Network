@@ -56,7 +56,9 @@ public class ClientInit : MonoBehaviour
                 _client = new Client(new TcpClient(IP, Port));
                 Debug.Log("Client started");
                 GameController.Instance.SetClient(_client);
-                _client.Send(new Message(MessageType.Login, _client.Serialize(_localPlayer.GetUser()), ""));
+                byte[] bytes = _client.Serialize(new Connection(_localPlayer.GetUser().Username, ""));
+                Message message = new Message(MessageType.Login, bytes, "");
+                _client.Send(message);
             }
             else
             {

@@ -6,7 +6,7 @@ namespace NetworkLib.GameClient
     public class Network
     {
         public Client Client;
-        public User User = null;
+        public Connection Conn = null;
         public bool InGame = false;
         public bool InQueue = false;
 

@@ -8,8 +8,24 @@ namespace MyGame{
         class User{}
     }
     namespace NetworkLib{
-        interface IClient{}
-        interface IServer{}
+        class Connection{
+            + string Username
+            + string Password
+        }
+        interface IClient{
+            + bool IsConnected()
+            + void Disconnect()
+            + async Task SendAsync(byte[] bytes)
+            + async Task SendAsync(object obj)
+            + void Send(object obj)
+            + void Send(byte[] bytes)
+            + T Deserialize<T>(byte[] data)
+            + byte[] Serialize(object obj)
+        }
+        interface IServer{
+            + void UpdateServer()
+            + void Shutdown()
+        }
         namespace Logger{
             interface ILogNetwork{
                 + ILogNetwork Instance();
@@ -26,14 +42,6 @@ namespace MyGame{
                 - byte[] _TcpReceiveBuffer;
                 - BinaryFormatter _br;
                 + Client(TcpClient socket)
-                + bool IsConnected()
-                + void Disconnect()
-                + async Task SendAsync(byte[] bytes)
-                + async Task SendAsync(object obj)
-                + void Send(object obj)
-                + void Send(byte[] bytes)
-                + T Deserialize<T>(byte[] data)
-                + byte[] Serialize(object obj)
                 - void RecieveCallback(IAsyncResult ar)
             }
             class Network {
@@ -52,8 +60,6 @@ namespace MyGame{
                 + List<Client> Clients
                 + MatchMaking MatchMaking
                 + Server(int port)
-                + void UpdateServer()
-                + void Shutdown()
                 - void TCPAcceptCallback(IAsyncResult ar)
                 - void CheckClientQueues()
             }
@@ -143,12 +149,13 @@ namespace MyGame{
 MyGame::NetworkLib::GameClient::Client *-- MyGame::NetworkLib::GameClient::Network
 MyGame::NetworkSetup::GameController *-- MyGame::Enemy
 MyGame::NetworkSetup::GameController *-- MyGame::Player
-MyGame::NetworkSetup::GameController -- MyGame::NetworkLib::GameClient::Network
+MyGame::NetworkSetup::GameController -- MyGame::NetworkLib::GameClient::Network : Dequeues
 
-MyGame::NetworkSetup::ClientInit *-- MyGame::NetworkLib::IClient
-MyGame::NetworkSetup::ServerInit *-- MyGame::NetworkLib::IServer
+MyGame::NetworkSetup::ClientInit *-- MyGame::NetworkLib::GameClient::Client
+MyGame::NetworkSetup::ServerInit *-- MyGame::NetworkLib::GameServer::Server
 
 MyGame::NetworkLib::GameServer::Server *-- MyGame::NetworkLib::GameServer::MatchMaking
+MyGame::NetworkLib::GameServer::Server *-- MyGame::NetworkLib::GameServer::Client
 MyGame::NetworkLib::GameServer::MatchMaking *-- MyGame::NetworkLib::GameServer::Match
 MyGame::NetworkLib::GameServer::Match *-- MyGame::NetworkLib::GameClient::Client
 
@@ -156,5 +163,8 @@ MyGame::NetworkLib::Logger::ILogNetwork <|-- MyGame::NetworkSetup::UnityLogger
 
 MyGame::NetworkLib::IClient <|-- MyGame::NetworkLib::GameClient::Client
 MyGame::NetworkLib::IServer <|-- MyGame::NetworkLib::GameServer::Server
+
+MyGame::NetworkLib::GameServer::Server *-- MyGame::NetworkLib::Connection
+MyGame::NetworkLib::GameClient::Network *-- MyGame::NetworkLib::Connection
 
 @enduml

@@ -1,10 +1,6 @@
-using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
-using System.Threading.Tasks;
-using DTOs;
 using NetworkLib.GameClient;
 
 namespace NetworkLib.GameServer
@@ -63,7 +59,7 @@ namespace NetworkLib.GameServer
                     {
                         continue;
                     }
-                    UnityEngine.Debug.Log($"Client {client.NetworkHandler.User?.Username} has {client.NetworkHandler.MessageQueue.Count} messages");
+                    UnityEngine.Debug.Log($"Client {client.NetworkHandler.Conn?.Username} has {client.NetworkHandler.MessageQueue.Count} messages");
                     while (client.NetworkHandler.MessageQueue.TryDequeue(out Message msg))
                     {
                         ProcessMessage(client, msg);
@@ -71,7 +67,7 @@ namespace NetworkLib.GameServer
                 }
                 else
                 {
-                    UnityEngine.Debug.Log($"Client {client.NetworkHandler.User?.Username} is disconnected");
+                    UnityEngine.Debug.Log($"Client {client.NetworkHandler.Conn?.Username} is disconnected");
                     disconnectedClients.Add(client);
                 }
             }
@@ -80,16 +76,16 @@ namespace NetworkLib.GameServer
 
         private void ProcessMessage(Client client, Message msg)
         {
-            if (msg.MsgType == MessageType.Login && client.NetworkHandler.User == null)
+            if (msg.MsgType == MessageType.Login && client.NetworkHandler.Conn == null)
             {
-                client.NetworkHandler.User = client.Deserialize<User>(msg.Data);
-                UnityEngine.Debug.Log($"User {client.NetworkHandler.User.Username} logged in");
+                client.NetworkHandler.Conn = client.Deserialize<Connection>(msg.Data);
+                UnityEngine.Debug.Log($"User {client.NetworkHandler.Conn.Username} logged in");
                 client.Send(new Message(MessageType.LoginResponse, new byte[0], ""));
             }
-            if (msg.MsgType == MessageType.JoinQueue && client.NetworkHandler.User != null)
+            if (msg.MsgType == MessageType.JoinQueue && client.NetworkHandler.Conn != null)
             {
                 client.NetworkHandler.InQueue = true;
-                UnityEngine.Debug.Log($"User {client.NetworkHandler.User.Username} joined queue");
+                UnityEngine.Debug.Log($"User {client.NetworkHandler.Conn.Username} joined queue");
                 MatchMaking.Join(client);
             }
         }

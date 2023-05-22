@@ -29,7 +29,7 @@ namespace NetworkLib.GameServer
         {
             Matches[0].AddPlayer(client);
             client.Send(new Message(MessageType.MatchJoined, new byte[0], ""));
-            UnityEngine.Debug.Log($"User {client.NetworkHandler.User.Username} joined match");
+            UnityEngine.Debug.Log($"User {client.NetworkHandler.Conn.Username} joined match");
             client.NetworkHandler.InGame = true;
             client.NetworkHandler.InQueue = false;
         }
