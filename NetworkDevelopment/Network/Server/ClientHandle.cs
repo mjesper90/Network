@@ -34,9 +34,9 @@ public class ClientHandle : IDisposable
     }
 
     /// <summary>
-    /// Read data send by the client over UDP
+    /// Read data packets send by the client over UDP
     /// </summary>
-    public byte[] ReadUnsafeData()
+    public byte[][] ReadUnsafeData()
     {
         return _network.ReadUnsafeData();
     }
@@ -52,9 +52,9 @@ public class ClientHandle : IDisposable
     /// <summary>
     /// Send data to client over UDP
     /// </summary>
-    public int WriteUnsafeData(byte[] buffer)
+    public void WriteUnsafeData(byte[] buffer, int amount)
     {
-        throw new NotImplementedException();
+        _network.WriteUnsafeData(buffer, amount);
     }
 
     public void Dispose()

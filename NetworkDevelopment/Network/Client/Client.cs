@@ -94,16 +94,13 @@ public class Client : IDisposable
             throw new Exception("Can not send data when not connected");
     }
 
-    public void WriteSafeData(byte[] data)
+    public void SendData(bool isSafe, byte[] data)
     {
         ThrowIfNotConnected();
-        _network!.WriteSafeData(data);
-    }
-
-    public void WriteUnsafeData(byte[] data)
-    {
-        ThrowIfNotConnected();
-        _network!.WriteUnsafeData(data);
+        if (isSafe)
+            _network!.WriteSafeData(data);
+        else
+            _network!.WriteUnsafeData(data);
     }
 
     public int ReadSafeData(byte[] buffer)

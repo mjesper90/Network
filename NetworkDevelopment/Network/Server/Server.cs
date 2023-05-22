@@ -2,6 +2,7 @@
 using System.Net;
 using Network.Common;
 using System.Threading;
+using Network.Client;
 
 namespace Network.Server;
 
@@ -149,22 +150,19 @@ public class Server : IDisposable
         return ClientsDisconnected;
     }
 
-    private bool GetPacketFromClient(in ClientHandle client, out Packet safe, out Packet notsafe)
+    private bool GetPacketFromClient(in ClientHandle client, List<Packet> packets)
     {
         if (!client.IsConnected)
-        {
-            safe = new Packet(null, false, 0, 0);
-            notsafe = new Packet(null, false, 0, 0);
             return false;
-        }
 
         byte[] safeBytes = new byte[1024];
 
         int safeSize = client.ReadSafeData(safeBytes);
-        byte[] notsafeBytes = client.ReadUnsafeData();
+        byte[][] notsafeBytes = client.ReadUnsafeData();
 
-        safe = new Packet(safeBytes, true, safeSize, client.ID);
-        notsafe = new Packet(notsafeBytes, false, notsafeBytes.Length, client.ID);
+        packets.Add(new Packet(safeBytes, true, safeSize, client.ID));
+        foreach (var data in notsafeBytes)
+            packets.Add(new Packet(data, false, data.Length, client.ID));
 
         return true;
     }
@@ -180,17 +178,8 @@ public class Server : IDisposable
         {
             uint clientID = clientHandle.ID;
 
-            if (GetPacketFromClient(clientHandle, out Packet safe, out Packet notsafe))
-            {
-                if (safe.Size != 0)
-                    packets.Add(safe);
-                if (notsafe.Size != 0)
-                    packets.Add(notsafe);
-            }
-            else
-            {
+            if (!GetPacketFromClient(clientHandle, packets))
                 HandleDisconnectedClient(clientHandle);
-            }
         }
         return packets.ToArray();
     }
@@ -200,10 +189,25 @@ public class Server : IDisposable
         return _clients.Values.ToArray();
     }
 
-    //public void SendSafeDataToAll()
-    //public void SendUnsafeDataToAll()
+    public void SendDataToAllClients(bool isSafe, byte[] buffer, int amount)
+    {
+        if (amount == -1)
+            amount = buffer.Length;
 
-    public bool SendSafeDataToClient(uint ID, byte[] buffer, int amount = -1)
+        var tempClients = _clients.Values;
+        foreach (ClientHandle clientHandle in tempClients)
+        {
+            if (!CheckClientConnection(clientHandle))
+                continue;
+
+            if (isSafe)
+                clientHandle.WriteSafeData(buffer, amount);
+            else
+                clientHandle.WriteUnsafeData(buffer, amount);
+        }
+    }
+
+    public bool SendDataToClient(uint ID, bool isSafe, byte[] buffer, int amount = -1)
     {
         ClientHandle client = _clients[ID];
         if (!CheckClientConnection(client))
@@ -211,11 +215,14 @@ public class Server : IDisposable
 
         if (amount == -1)
             amount = buffer.Length;
-        _clients[ID].WriteSafeData(buffer, amount);
+
+        if (isSafe)
+            client.WriteSafeData(buffer, amount);
+        else
+            client.WriteUnsafeData(buffer, amount);
+
         return true;
     }
-
-    //public void SendUnsafeDataToClient(uint ID)
 
     public void Dispose()
     {

@@ -33,7 +33,7 @@ while (true)
         if (client.IsConnected)
         {
             input = Console.ReadLine()!;
-            client.WriteSafeData(Serializer.GetBytes(input));
+            client.SendData(true, Serializer.GetBytes(input));
 
             Packet[] packets = server.Update();
 

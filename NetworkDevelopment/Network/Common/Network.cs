@@ -17,6 +17,8 @@ public class Network : IDisposable
     private IPEndPoint _ipEndPoint;
     private IPEndPoint _localRecivePort;
 
+    private List<byte[]> _packets = new List<byte[]>();
+
     private bool _recivedDisconnectMessage = false;
 
     public bool IsConnected { get; private set; } = false;
@@ -29,11 +31,22 @@ public class Network : IDisposable
     {
         _tcp = TCPConnection;
         _safeStream = _tcp.GetStream();
-        _udp = new UdpClient();
         _ipEndPoint = endPointIP;
         _localRecivePort = new IPEndPoint(IPAddress.Any, localPort);
+        _udp = new UdpClient(_localRecivePort);
 
         ValidateConnection();
+
+        Task.Run(ListenOnUDP);
+    }
+
+    private void ListenOnUDP()
+    {
+        IPEndPoint? a = null;
+
+        while (IsConnected)
+            _packets.Add(_udp.Receive(ref a));
+
     }
 
     private void ValidateConnection()
@@ -64,11 +77,11 @@ public class Network : IDisposable
         return bytesCount;
     }
 
-    public byte[] ReadUnsafeData()
+    public byte[][] ReadUnsafeData()
     {
         ThrowIfInvalidUse();
-
-        return _udp.Receive(ref _localRecivePort);
+        byte[][] data = _packets.ToArray();
+        return data;
     }
 
     public void WriteSafeData(byte[] buffer, int amount = -1)
@@ -98,6 +111,7 @@ public class Network : IDisposable
 
         _tcp.Dispose();
         _safeStream.Dispose();
+        _udp.Client.Close();
         _udp.Dispose();
     }
 }
