@@ -47,23 +47,16 @@ while (true)
                 Console.WriteLine("Server recived: " + data);
                 data += " Hello World!";
                 Console.WriteLine("Server send: " + data);
-
-                foreach (var newPacket in server.Update())
-                {
-                    Packet bytes = Serializer.GetPacket(data);
-                    server.SendPacketToClient(newPacket.ClientID, bytes.ChangeSafty(false));
-
-                    Thread.Sleep(2);
-                    Packet[] bytesRecived = client.ReadSafeData();
-                    if (bytesRecived.Length != 1)
-                        continue;
-                    if (bytesRecived[0].Size < 1)
-                        continue;
-                    Console.WriteLine("Client received: " + Serializer.GetObject<string>(bytesRecived[0]));
-                }
+                Packet bytes = Serializer.GetPacket(data);
+                server.SendPacketToClient(packet.ClientID, bytes.ChangeSafty(false));
+                Thread.Sleep(2);
+                Packet[] bytesRecived = client.ReadSafeData();
+                if (bytesRecived.Length != 1)
+                    continue;
+                if (bytesRecived[0].Size < 1)
+                    continue;
+                Console.WriteLine("Client received: " + Serializer.GetObject<string>(bytesRecived[0]));
             }
-
-
         }
     }
 }
