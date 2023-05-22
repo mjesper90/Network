@@ -7,7 +7,7 @@ namespace NetworkLib.GameServer
 {
     public class Match
     {
-        public List<Client> Clients = new List<Client>();
+        public ConcurrentDictionary<string, Client> Clients = new ConcurrentDictionary<string, Client>();
         private ConcurrentDictionary<string, Message> _playerPositions = new ConcurrentDictionary<string, Message>();
 
         public Match()
@@ -16,12 +16,30 @@ namespace NetworkLib.GameServer
 
         public void AddPlayer(Client client)
         {
-            Clients.Add(client);
+            Clients.TryAdd(client.NetworkHandler.User.Username, client);
+
+            // Notify other clients in the match about the new player
+            foreach (Client c in Clients.Values)
+            {
+                if (c.NetworkHandler.User.Username != client.NetworkHandler.User.Username)
+                {
+                    _ = c.SendAsync(new Message(MessageType.PlayerJoined, c.Serialize(client.NetworkHandler.User.Username), ""));
+                }
+            }
         }
 
         public void RemovePlayer(Client client)
         {
-            Clients.Remove(client);
+            Clients.TryRemove(client.NetworkHandler.User.Username, out Client removedClient);
+
+            // Notify other clients in the match about the removed player
+            foreach (Client c in Clients.Values)
+            {
+                if (c.NetworkHandler.User.Username != client.NetworkHandler.User.Username)
+                {
+                    _ = c.SendAsync(new Message(MessageType.PlayerLeft, c.Serialize(client.NetworkHandler.User.Username), ""));
+                }
+            }
         }
 
         public Message[] GetState()
@@ -31,7 +49,7 @@ namespace NetworkLib.GameServer
 
         public void UpdateState()
         {
-            foreach (Client client in Clients)
+            foreach (Client client in Clients.Values)
             {
                 if (client.NetworkHandler.User == null) //Player not logged in?
                 {

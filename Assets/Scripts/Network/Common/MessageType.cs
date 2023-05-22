@@ -4,6 +4,8 @@ namespace NetworkLib
     {
         User,
         PlayerPosition,
+        PlayerJoined,
+        PlayerLeft,
         Shoot,
         Player,
         Update,

@@ -18,9 +18,9 @@ namespace NetworkLib.GameServer
             {
                 match.UpdateState();
                 Message[] messages = match.GetState();
-                foreach (Client client in match.Clients)
+                foreach (Client client in match.Clients.Values)
                 {
-                    client.Send(messages);
+                    _ = client.SendAsync(messages);
                 }
             }
         }

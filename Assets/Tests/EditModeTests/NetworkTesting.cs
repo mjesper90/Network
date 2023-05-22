@@ -11,9 +11,11 @@ public class NetworkTesting
 {
     private Server _server;
     private Client _client;
+    private Client _client2;
 
     private Thread _serverThread;
     private Thread _clientThread;
+    private Thread _clientThread2;
 
     [OneTimeSetUp]
     public void OneTimeSetUp()
@@ -22,9 +24,26 @@ public class NetworkTesting
         _serverThread = new Thread(() => _server = new Server(8052));
         _serverThread.Start();
 
-        // Start client
+        // Wait for the server to start
+        Thread.Sleep(100);
+
+        // Start clients
         _clientThread = new Thread(() => _client = new Client(new TcpClient("127.0.0.1", 8052)));
+        _clientThread2 = new Thread(() => _client2 = new Client(new TcpClient("127.0.0.1", 8052)));
         _clientThread.Start();
+
+        // Wait for the clients to connect
+        Thread.Sleep(100);
+
+        //Assert
+        Assert.IsTrue(_server != null);
+        Assert.IsTrue(_client != null);
+
+        Assert.IsTrue(_server.Clients.Count == 1);
+
+        Assert.IsTrue(_client.IsConnected());
+
+        Assert.IsTrue(_client.NetworkHandler.MessageQueue.Count == 0);
     }
 
     // Testing the threads are running, the server is listening and the client is connected
@@ -35,7 +54,7 @@ public class NetworkTesting
         Assert.IsTrue(_client.IsConnected());
 
         _serverThread.Join();
-        Assert.IsTrue(_server.Clients.Count == 1);
+        Assert.IsTrue(_server.Clients.Count > 0);
     }
 
     // Testing the client can send a message to the server
@@ -52,6 +71,7 @@ public class NetworkTesting
 
         // Wait for the message to be sent
         Thread.Sleep(100);
+
         Assert.IsTrue(_server.Clients[0].NetworkHandler.MessageQueue.Count == 1);
 
         Message message = _server.Clients[0].NetworkHandler.MessageQueue.TryDequeue(out message) ? message : null;
@@ -65,9 +85,17 @@ public class NetworkTesting
     [Test]
     public void ClientSendAsync()
     {
-        //Send async
+        _clientThread.Join();
+        Assert.IsTrue(_client.IsConnected());
+
+        _serverThread.Join();
+        Assert.IsTrue(_server.Clients.Count == 1);
+
         _ = _client.SendAsync(new Message(MessageType.Message, _client.Serialize("Hello test"), ""));
+
+        // Wait for the message to be sent
         Thread.Sleep(100);
+
         Assert.IsTrue(_server.Clients[0].NetworkHandler.MessageQueue.Count == 1);
 
         Message message = _server.Clients[0].NetworkHandler.MessageQueue.TryDequeue(out message) ? message : null;
@@ -81,12 +109,6 @@ public class NetworkTesting
     [Test]
     public void ServerSend()
     {
-        _clientThread.Join();
-        Assert.IsTrue(_client.IsConnected());
-
-        _serverThread.Join();
-        Assert.IsTrue(_server.Clients.Count == 1);
-
         _server.Clients[0].Send(new Message(MessageType.Message, _client.Serialize("Hello test"), ""));
 
         // Wait for the message to be sent
@@ -114,6 +136,34 @@ public class NetworkTesting
         Assert.IsTrue(message.MsgType == MessageType.Message);
         Assert.IsTrue(_client.Deserialize<string>(message.Data) == "Hello test");
         Assert.IsTrue(_client.NetworkHandler.MessageQueue.Count == 0);
+    }
+
+    // Testing multiple clients
+    [Test]
+    public void MultipleClients()
+    {
+        // Start client
+        _clientThread2.Start();
+
+        // Wait for the client to connect
+        Thread.Sleep(100);
+
+        //Assert
+        Assert.IsTrue(_server.Clients.Count == 2);
+        Assert.IsTrue(_client2.IsConnected());
+
+        // Disconnect client
+        _client2.Disconnect();
+
+        // Wait for the client to disconnect
+        Thread.Sleep(100);
+
+        //Update server state
+        _server.UpdateServer();
+
+        //Assert
+        Assert.IsTrue(_server.Clients.Count == 1);
+        Assert.IsTrue(!_client2.IsConnected());
     }
 
     //Cleanup
