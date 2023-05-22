@@ -19,7 +19,8 @@ public class Server : IDisposable
     public bool AcceptClients { get; set; } = true;
     public bool Disposed { get; private set; } = false;
 
-    private List<ClientHandle> _clients = new List<ClientHandle>();
+    //private List<ClientHandle> _clients = new List<ClientHandle>();
+    private Dictionary<uint, ClientHandle> _clients = new Dictionary<uint, ClientHandle>();
     private List<ClientHandle> _clientsDisconnected = new List<ClientHandle>();
     private int _clientPort = 5678; // Doing this and just adding one to the port for each client is a really bad ideer
     private uint _clientIDCounter = 0;
@@ -72,7 +73,7 @@ public class Server : IDisposable
         if (ValidateConnectionRequest(client, out var clientIP, out var userName))
         {
             ClientHandle newClient = new ClientHandle(userName, _clientIDCounter++, client, clientIP, _clientPort++);
-            _clients.Add(newClient);
+            _clients.Add(newClient.ID, newClient);
         }
     }
 
@@ -99,7 +100,7 @@ public class Server : IDisposable
             ConnectionRequest request = Serializer.GetObject<ConnectionRequest>(data);
 
             clientIP = new IPEndPoint(request.IP, request.Port);
-            userName = request.UserName;
+            userName = request.Username;
 
             stream.Write(Consts.CONNECTION_ESTABLISHED);
 
@@ -116,11 +117,43 @@ public class Server : IDisposable
         }
     }
 
+    private void HandleDisconnectedClient(ClientHandle client)
+    {
+        if (client.IsConnected)
+            throw new Exception("Handling a non disconnected client as disconnected");
+
+        _clientsDisconnected.Add(client);
+        _clients.Remove(client.ID);
+
+        // Log made so its easy to query
+        Logger.Log($"Disconnected client:\nID:{client.ID}\nUsername:{client.UserName}", LogWarningLevel.Info);
+    }
+
     public ClientHandle[] GetDisconnectedClients()
     {
         var ClientsDisconnected = _clientsDisconnected.ToArray();
         _clientsDisconnected.Clear();
         return ClientsDisconnected;
+    }
+
+    private bool GetPacketFromClient(in ClientHandle client, out Packet safe, out Packet notsafe)
+    {
+        if (!client.IsConnected)
+        {
+            safe = new Packet(null, false, 0, 0);
+            notsafe = new Packet(null, false, 0, 0);
+            return false;
+        }
+
+        byte[] safeBytes = new byte[1024];
+
+        int safeSize = client.ReadSafeData(safeBytes);
+        byte[] notsafeBytes = client.ReadUnsafeData();
+
+        safe = new Packet(safeBytes, true, safeSize, client.ID);
+        notsafe = new Packet(notsafeBytes, false, notsafeBytes.Length, client.ID);
+
+        return true;
     }
 
     /// <summary>
@@ -129,45 +162,35 @@ public class Server : IDisposable
     public Packet[] Update()
     {
         List<Packet> packets = new List<Packet>();
-        List<ClientHandle> newDisconnects = new List<ClientHandle>();
-        foreach (ClientHandle clientHandle in _clients)
+        var tempClients = _clients.Values;
+        foreach (ClientHandle clientHandle in tempClients)
         {
             uint clientID = clientHandle.ID;
-            byte[] data = new byte[1024];
-            int size = clientHandle.ReadSafeData(data);
 
-            if (!clientHandle.IsConnected)
+            if (GetPacketFromClient(clientHandle, out Packet safe, out Packet notsafe))
             {
-                newDisconnects.Add(clientHandle);
-                continue;
+                if (safe.Size != 0)
+                    packets.Add(safe);
+                if (notsafe.Size != 0)
+                    packets.Add(notsafe);
             }
-
-            if (size == 0)
-                continue;
-
-            packets.Add(new Packet(data, false, size, clientID));
+            else
+            {
+                HandleDisconnectedClient(clientHandle);
+            }
         }
-
-        // Disconnects
-        foreach (var disconnectedClient in newDisconnects)
-        {
-            _clients.Remove(disconnectedClient);
-            Logger.Log($"Client disconnected. ID: {disconnectedClient.ID}. Name: \"{disconnectedClient.UserName}\"", LogWarningLevel.Info);
-        }
-        _clientsDisconnected.AddRange(newDisconnects);
-
         return packets.ToArray();
     }
 
-    public ClientHandle[] GetClientHandles()
+    public ClientHandle[] GetCurrentClientHandles()
     {
-        return _clients.ToArray();
+        return _clients.Values.ToArray();
     }
 
     //public void SendSafeDataToAll()
     //public void SendUnsafeDataToAll()
-    //public void SendSafeDataToClient()
-    //public void SendUnsafeDataToClient()
+    //public void SendSafeDataToClient(int ID)
+    //public void SendUnsafeDataToClient(int ID)
 
     public void Dispose()
     {
@@ -175,7 +198,7 @@ public class Server : IDisposable
 
         _clientRequestListener.Stop();
 
-        foreach (ClientHandle clientHandle in _clients)
+        foreach (ClientHandle clientHandle in _clients.Values)
             clientHandle.Dispose();
 
         Disposed = true;

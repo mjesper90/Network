@@ -36,9 +36,9 @@ public class ClientHandle : IDisposable
     /// <summary>
     /// Read data send by the client over UDP
     /// </summary>
-    public int ReadUnsafeData(byte[] buffer)
+    public byte[] ReadUnsafeData()
     {
-        throw new NotImplementedException();
+        return _network.ReadUnsafeData();
     }
 
     /// <summary>

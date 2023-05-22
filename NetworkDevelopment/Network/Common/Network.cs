@@ -79,7 +79,7 @@ public class Network : IDisposable
             amount = buffer.Length;
 
         int bytesCount = _safeStream.Read(buffer, 0, amount);
-
+        
         if (IsDisconnectMessage(buffer, bytesCount))
         {
             _recivedDisconnectMessage = true;

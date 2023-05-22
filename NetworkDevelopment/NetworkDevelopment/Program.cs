@@ -43,7 +43,7 @@ while (true)
                 Console.WriteLine("Server recived: " + data);
                 data += " Hello World!";
                 Console.WriteLine("Server send: " + data);
-                foreach (var clientHandle in server.GetClientHandles())
+                foreach (var clientHandle in server.GetCurrentClientHandles())
                 {
                     byte[] bytes = Serializer.GetBytes(data);
                     clientHandle.WriteSafeData(bytes);

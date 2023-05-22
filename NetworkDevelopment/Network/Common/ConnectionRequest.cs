@@ -12,12 +12,23 @@ public unsafe struct ConnectionRequest
 {
     public long IP;
     public int Port;
-    public string UserName;
+    public string Username;
 
-    public ConnectionRequest(long ip, int port, string userName)
+    public ConnectionRequest(long ip, int port, string username)
     {
+        if (!CheckIfValidUsername(username))
+            throw new ArgumentException("Invalid username");
+
         IP = ip;
         Port = port;
-        UserName = userName;
+        Username = username;
+    }
+
+    public static bool CheckIfValidUsername(string username)
+    {
+        if (username.Contains('\n'))
+            return false;
+
+        return true;
     }
 }
