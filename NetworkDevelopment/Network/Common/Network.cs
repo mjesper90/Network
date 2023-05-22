@@ -10,8 +10,6 @@ namespace Network.Common;
 /// </summary>
 public class Network : IDisposable
 {
-    private static readonly byte[] DisconnectMessage = new byte[] { 0, 1, 2, 3, 123, 123, 123, 123 }; // random
-
     private TcpClient _tcp;
     private NetworkStream _safeStream;
 
@@ -54,23 +52,6 @@ public class Network : IDisposable
             throw new Exception("Can not use a network that is disposed");
     }
 
-    private void SendDisconnectMessage()
-    {
-        WriteSafeData(DisconnectMessage);
-    }
-
-    private bool IsDisconnectMessage(byte[] data, int length)
-    {
-        if (length != DisconnectMessage.Length)
-            return false;
-
-        for (int i = 0; i < DisconnectMessage.Length; i++)
-            if (data[i] != DisconnectMessage[i])
-                return false;
-
-        return true;
-    }
-
     public int ReadSafeData(byte[] buffer, int amount = -1)
     {
         ThrowIfInvalidUse();
@@ -79,13 +60,6 @@ public class Network : IDisposable
             amount = buffer.Length;
 
         int bytesCount = _safeStream.Read(buffer, 0, amount);
-        
-        if (IsDisconnectMessage(buffer, bytesCount))
-        {
-            _recivedDisconnectMessage = true;
-            Dispose();
-            return 0;
-        }
 
         return bytesCount;
     }
@@ -119,9 +93,6 @@ public class Network : IDisposable
 
     public void Dispose()
     {
-        if (!_recivedDisconnectMessage) // No need to send message back
-            SendDisconnectMessage();
-
         IsDisposed = true;
         IsConnected = false;
 
