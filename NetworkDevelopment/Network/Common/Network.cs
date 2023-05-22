@@ -14,7 +14,7 @@ public class Network : IDisposable
     private NetworkStream _safeStream;
 
     private UdpClient _udp;
-    private IPEndPoint _ipEndPoint;
+    private IPEndPoint _endPoint;
     private IPEndPoint _localRecivePort;
 
     private List<byte[]> _packets = new List<byte[]>();
@@ -31,9 +31,10 @@ public class Network : IDisposable
     {
         _tcp = TCPConnection;
         _safeStream = _tcp.GetStream();
-        _ipEndPoint = endPointIP;
-        _localRecivePort = new IPEndPoint(IPAddress.Any, localPort);
+        _endPoint = endPointIP;
+        _localRecivePort = new IPEndPoint(NetworkHelper.GetLocalIPAddress(), localPort);
         _udp = new UdpClient(_localRecivePort);
+        _udp.Connect(_endPoint);
 
         ValidateConnection();
 
@@ -42,10 +43,8 @@ public class Network : IDisposable
 
     private void ListenOnUDP()
     {
-        IPEndPoint? a = null;
-
         while (IsConnected)
-            _packets.Add(_udp.Receive(ref a));
+            _packets.Add(_udp.Receive(ref _localRecivePort));
 
     }
 

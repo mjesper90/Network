@@ -34,6 +34,9 @@ while (true)
         {
             input = Console.ReadLine()!;
             client.SendData(true, Serializer.GetBytes(input));
+            client.SendData(false, Serializer.GetBytes(input));
+
+            Thread.Sleep(1000);
 
             Packet[] packets = server.Update();
 
