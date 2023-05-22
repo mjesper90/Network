@@ -13,19 +13,19 @@ namespace NetworkLib.GameClient
         public Network NetworkHandler;
 
         private NetworkStream _tcpStream;
-        private byte[] _TcpReceiveBuffer;
-        private BinaryFormatter _br;
+        private byte[] _tcpReceiveBuffer;
+        private BinaryFormatter _binaryFormatter;
 
         public Client(TcpClient socket)
         {
-            _br = new BinaryFormatter();
+            _binaryFormatter = new BinaryFormatter();
             NetworkHandler = new Network(this);
             Tcp = socket;
             Tcp.ReceiveBufferSize = CONSTANTS.BufferSize;
             Tcp.SendBufferSize = CONSTANTS.BufferSize;
             _tcpStream = Tcp.GetStream();
-            _TcpReceiveBuffer = new byte[CONSTANTS.BufferSize];
-            _tcpStream.BeginRead(_TcpReceiveBuffer, 0, CONSTANTS.BufferSize, RecieveCallback, null);
+            _tcpReceiveBuffer = new byte[CONSTANTS.BufferSize];
+            StartReceiving();
         }
 
         public bool IsConnected()
@@ -38,7 +38,7 @@ namespace NetworkLib.GameClient
             Tcp?.Close();
             Tcp = null;
             _tcpStream = null;
-            _TcpReceiveBuffer = new byte[CONSTANTS.BufferSize];
+            _tcpReceiveBuffer = new byte[CONSTANTS.BufferSize];
         }
 
         public async Task SendAsync(byte[] bytes)
@@ -79,7 +79,7 @@ namespace NetworkLib.GameClient
         {
             using (MemoryStream ms = new MemoryStream(data))
             {
-                return (T)_br.Deserialize(ms);
+                return (T)_binaryFormatter.Deserialize(ms);
             }
         }
 
@@ -87,49 +87,48 @@ namespace NetworkLib.GameClient
         {
             using (MemoryStream ms = new MemoryStream())
             {
-                _br.Serialize(ms, obj);
+                _binaryFormatter.Serialize(ms, obj);
                 return ms.ToArray();
             }
         }
 
-        private void RecieveCallback(IAsyncResult ar)
+        private async void StartReceiving()
         {
             try
             {
-                int _recievedLength = _tcpStream.EndRead(ar);
-                if (_recievedLength > 0)
+                while (IsConnected())
                 {
-                    byte[] data = new byte[_recievedLength];
-                    Array.Copy(_TcpReceiveBuffer, data, _recievedLength);
-                    object msg = Deserialize<object>(data);
-                    if (msg is Message)
+                    int receivedLength = await _tcpStream.ReadAsync(_tcpReceiveBuffer, 0, CONSTANTS.BufferSize);
+                    if (receivedLength > 0)
                     {
-                        NetworkHandler.MessageQueue.Enqueue((Message)msg);
-                    }
-                    if (msg is Message[])
-                    {
-                        foreach (Message message in (Message[])msg)
+                        byte[] data = new byte[receivedLength];
+                        Array.Copy(_tcpReceiveBuffer, data, receivedLength);
+                        object msg = Deserialize<object>(data);
+                        if (msg is Message)
                         {
-                            NetworkHandler.MessageQueue.Enqueue(message);
+                            NetworkHandler.MessageQueue.Enqueue((Message)msg);
+                        }
+                        if (msg is Message[])
+                        {
+                            foreach (Message message in (Message[])msg)
+                            {
+                                NetworkHandler.MessageQueue.Enqueue(message);
+                            }
                         }
                     }
-                }
-                else
-                {
-                    Console.WriteLine("Client disconnected");
-                    Disconnect();
+                    else
+                    {
+                        Console.WriteLine("Client disconnected");
+                        Disconnect();
+                        break;
+                    }
                 }
             }
             catch (Exception e)
             {
-                Console.WriteLine($"Error recieving TCP data: {e}");
+                Console.WriteLine($"Error receiving TCP data: {e}");
                 Disconnect();
             }
-            finally
-            {
-                _tcpStream.BeginRead(_TcpReceiveBuffer, 0, CONSTANTS.BufferSize, RecieveCallback, null);
-            }
         }
-
     }
 }
