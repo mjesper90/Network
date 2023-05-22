@@ -6,20 +6,18 @@ public class Serializer
 {
     private static BinaryFormatter _binaryFormatter = new BinaryFormatter();
 
-    public static byte[] GetBytes<T>(T obj)
+    public static Packet GetPacket<T>(T obj)
     {
         using (MemoryStream ms = new MemoryStream())
         {
             _binaryFormatter.Serialize(ms, obj);
-            return ms.ToArray();
+            return (Packet)ms.ToArray();
         }
     }
 
-    public static T GetObject<T>(byte[] data, int startIndex = 0, int count = -1)
+    public static T GetObject<T>(Packet packet)
     {
-        if (count == -1)
-            count = data.Length - startIndex;
-        using (MemoryStream ms = new MemoryStream(data, startIndex, count))
+        using (MemoryStream ms = new MemoryStream(packet.Data, 0, packet.Size))
         {
             return (T)_binaryFormatter.Deserialize(ms);
         }

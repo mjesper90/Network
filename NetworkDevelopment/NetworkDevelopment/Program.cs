@@ -33,30 +33,32 @@ while (true)
         if (client.IsConnected)
         {
             input = Console.ReadLine()!;
-            client.SendData(true, Serializer.GetBytes(input));
-            client.SendData(false, Serializer.GetBytes(input));
+            client.SendPacket(Serializer.GetPacket(input));
+            //client.SendData(false, Serializer.GetBytes(input));
 
-            Thread.Sleep(1000);
+            //Thread.Sleep(1000);
 
             Packet[] packets = server.Update();
 
             foreach (var packet in packets)
             {
-                string data = Serializer.GetObject<string>(packet.Data, 0, packet.Size);
+                string data = Serializer.GetObject<string>(packet);
                 Console.WriteLine("Server recived: " + data);
                 data += " Hello World!";
                 Console.WriteLine("Server send: " + data);
-                foreach (var clientHandle in server.GetCurrentClientHandles())
-                {
-                    byte[] bytes = Serializer.GetBytes(data);
-                    clientHandle.WriteSafeData(bytes);
 
-                    byte[] buffer = new byte[1024];
+                foreach (var Packet in server.Update())
+                {
+                    Packet bytes = Serializer.GetPacket(data);
+                    clientHandle.SendPacket(bytes.ChangeSafty(false));
+
                     Thread.Sleep(2);
-                    int count = client.ReadSafeData(buffer);
-                    if (count < 1)
+                    Packet[] bytesRecived = client.ReadSafeData();
+                    if (bytesRecived.Length != 1)
                         continue;
-                    Console.WriteLine("Client received: " + Serializer.GetObject<string>(buffer, 0, count));
+                    if (bytesRecived[0].Size < 1)
+                        continue;
+                    Console.WriteLine("Client received: " + Serializer.GetObject<string>(bytesRecived[0]));
                 }
             }
 

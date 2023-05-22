@@ -55,10 +55,10 @@ public class Client : IDisposable
             // Send request
             ConnectionRequest cR = new ConnectionRequest(_localAdress.Address, Consts.CLIENT_RECIVE_PORT, UserName);
 
-            byte[] requestData = Serializer.GetBytes(cR);
+            Packet requestData = Serializer.GetPacket(cR);
             var stream = tcpClient.GetStream();
 
-            stream.Write(requestData);
+            stream.Write(requestData.Data);
 
             // Check response
             byte[] buffer = new byte[Consts.CONNECTION_ESTABLISHED.Length];
@@ -94,27 +94,25 @@ public class Client : IDisposable
             throw new Exception("Can not send data when not connected");
     }
 
-    public void SendData(bool isSafe, byte[] data)
+    public void SendPacket(Packet packet)
     {
         ThrowIfNotConnected();
-        if (isSafe)
-            _network!.WriteSafeData(data);
-        else
-            _network!.WriteUnsafeData(data);
+
+        _network?.SendPacket(packet);
     }
 
-    public int ReadSafeData(byte[] buffer)
+    public Packet[] ReadSafeData()
     {
         ThrowIfNotConnected();
-        int amount = _network!.ReadSafeData(buffer, buffer.Length);
 
-        if (!_network.IsConnected)
-        {
-            _network = null;
-            return -1;
-        }
+        return _network?.ReadSafeData() ?? throw new Exception("?");
+    }
 
-        return amount;
+    public Packet[] ReadUnsafeData()
+    {
+        ThrowIfNotConnected();
+
+        return _network?.ReadUnsafeData() ?? throw new Exception("?");
     }
 
     public void Disconnect()

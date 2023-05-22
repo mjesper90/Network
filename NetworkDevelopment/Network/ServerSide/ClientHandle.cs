@@ -1,5 +1,4 @@
-﻿
-
+﻿using Network.Common;
 using System.Net;
 using System.Net.Sockets;
 
@@ -28,33 +27,25 @@ public class ClientHandle : IDisposable
     /// <summary>
     /// Read data send by the client over TCP
     /// </summary>
-    public int ReadSafeData(byte[] buffer)
+    public Packet[] ReadSafeData()
     {
-        return _network.ReadSafeData(buffer);
+        return _network.ReadSafeData();
     }
 
     /// <summary>
     /// Read data packets send by the client over UDP
     /// </summary>
-    public byte[][] ReadUnsafeData()
+    public Packet[] ReadUnsafeData()
     {
         return _network.ReadUnsafeData();
     }
 
     /// <summary>
-    /// Send data to client over TCP
-    /// </summary>
-    public void WriteSafeData(byte[] buffer, int amount = -1)
-    {
-        _network.WriteSafeData(buffer, amount);
-    }
-
-    /// <summary>
     /// Send data to client over UDP
     /// </summary>
-    public void WriteUnsafeData(byte[] buffer, int amount)
+    public void SendPacket(Packet packet)
     {
-        _network.WriteUnsafeData(buffer, amount);
+        _network.SendPacket(packet);
     }
 
     public void Dispose()

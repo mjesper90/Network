@@ -1,13 +1,14 @@
 ﻿
 
+using System.Drawing;
+using System.Runtime.CompilerServices;
+
 namespace Network.Common;
 
 public class Packet
 {
-    public uint ClientID;
-
     /// <summary>
-    /// Indicates if the data is send over TCP (True) or UDP (False)
+    /// Indicates if the data is send over TCP (True) or UDP (False). ( True by default )
     /// </summary>
     public bool SafePacket;
 
@@ -21,11 +22,34 @@ public class Packet
     /// </summary>
     public byte[] Data;
 
-    public Packet(byte[] data, bool safePacket, int size, uint clientID)
+    public Packet() { }
+
+    public Packet(byte[] data)
     {
         Data = data;
-        SafePacket = safePacket;
-        Size = size;
-        ClientID = clientID;
+        Size = data.Length;
+        SafePacket = true;
     }
+
+    public Packet(byte[] data, bool safePacket)
+    {
+        Data = data;
+        Size = data.Length;
+        SafePacket = safePacket;
+    }
+
+    public Packet(byte[] data, int size, bool safePacket)
+    {
+        Data = data;
+        Size = size;
+        SafePacket = safePacket;
+    }
+
+    public Packet ChangeSafty(bool safty)
+    {
+        SafePacket = safty;
+        return this;
+    }
+
+    public static implicit operator Packet(byte[] data) => new Packet(data);
 }

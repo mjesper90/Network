@@ -3,6 +3,7 @@ using System.Net;
 using Network.Common;
 using System.Threading;
 using Network.Client;
+using UDP_Networker.Server;
 
 namespace Network.Server;
 
@@ -155,14 +156,14 @@ public class Server : IDisposable
         if (!client.IsConnected)
             return false;
 
-        byte[] safeBytes = new byte[1024];
+        Packet[] safeBytes = client.ReadSafeData();
+        Packet[] notsafeBytes = client.ReadUnsafeData();
 
-        int safeSize = client.ReadSafeData(safeBytes);
-        byte[][] notsafeBytes = client.ReadUnsafeData();
+        foreach (var data in safeBytes)
+            packets.Add(new ServerPacket(data, client.ID));
 
-        packets.Add(new Packet(safeBytes, true, safeSize, client.ID));
         foreach (var data in notsafeBytes)
-            packets.Add(new Packet(data, false, data.Length, client.ID));
+            packets.Add(new ServerPacket(data, client.ID));
 
         return true;
     }
@@ -184,42 +185,33 @@ public class Server : IDisposable
         return packets.ToArray();
     }
 
+    /// <summary>
+    /// Not used for sending data. Should be removed so user cant send data through ClientHandles, wich is the servers job.
+    /// </summary>
     public ClientHandle[] GetCurrentClientHandles()
     {
         return _clients.Values.ToArray();
     }
 
-    public void SendDataToAllClients(bool isSafe, byte[] buffer, int amount)
+    public void SendDataToAllClients(Packet packet)
     {
-        if (amount == -1)
-            amount = buffer.Length;
-
         var tempClients = _clients.Values;
         foreach (ClientHandle clientHandle in tempClients)
         {
             if (!CheckClientConnection(clientHandle))
                 continue;
 
-            if (isSafe)
-                clientHandle.WriteSafeData(buffer, amount);
-            else
-                clientHandle.WriteUnsafeData(buffer, amount);
+            clientHandle.SendPacket(packet);
         }
     }
 
-    public bool SendDataToClient(uint ID, bool isSafe, byte[] buffer, int amount = -1)
+    public bool SendDataToClient(uint ID, Packet packet)
     {
         ClientHandle client = _clients[ID];
         if (!CheckClientConnection(client))
             return false;
 
-        if (amount == -1)
-            amount = buffer.Length;
-
-        if (isSafe)
-            client.WriteSafeData(buffer, amount);
-        else
-            client.WriteUnsafeData(buffer, amount);
+        client.SendPacket(packet);
 
         return true;
     }
