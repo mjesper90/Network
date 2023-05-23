@@ -9,6 +9,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Network_Tests", "NetworkDev
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NetworkDevelopment", "NetworkDevelopment\NetworkDevelopment\NetworkDevelopment.csproj", "{9C65566C-A4AE-460F-9FF1-0B1810BFB9A6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExampleGameTicTacToe", "ExampleGameTicTacToe\ExampleGameTicTacToe.csproj", "{DF473AF8-166F-4750-B9A7-9366C7D3F7FF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{9C65566C-A4AE-460F-9FF1-0B1810BFB9A6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9C65566C-A4AE-460F-9FF1-0B1810BFB9A6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9C65566C-A4AE-460F-9FF1-0B1810BFB9A6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DF473AF8-166F-4750-B9A7-9366C7D3F7FF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DF473AF8-166F-4750-B9A7-9366C7D3F7FF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DF473AF8-166F-4750-B9A7-9366C7D3F7FF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DF473AF8-166F-4750-B9A7-9366C7D3F7FF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
