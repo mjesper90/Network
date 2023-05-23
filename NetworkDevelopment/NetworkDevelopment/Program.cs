@@ -1,8 +1,8 @@
 ﻿using Development;
 using Network;
-using Network.Client;
+using Network.ClientSide;
 using Network.Common;
-using Network.Server;
+using Network.ServerSide;
 
 bool Running = true;
 

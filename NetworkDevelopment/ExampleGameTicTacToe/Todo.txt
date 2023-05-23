@@ -1,0 +1,12 @@
+﻿Add it so you can have 2 unic clients connect to sever
+
+Be able to assign each one an id
+
+Be able to send a board to all clients that they can use
+
+Be able to make move from client
+
+Be able to play a full game
+
+Be able to chat with each other
+

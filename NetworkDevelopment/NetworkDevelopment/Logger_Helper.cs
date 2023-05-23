@@ -31,7 +31,6 @@ public class Logger_Helper
         }
 
         Console.WriteLine($"{{{log.TimeSent.ToString("HH:mm:ss")}}} {log.Message}");
-
     }
 
     public static void Test()
