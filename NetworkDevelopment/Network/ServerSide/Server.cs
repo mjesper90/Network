@@ -4,6 +4,7 @@ using Network.Common;
 using System.Threading;
 using Network.Client;
 using UDP_Networker.Server;
+using System.ComponentModel.DataAnnotations;
 
 namespace Network.Server;
 
@@ -205,6 +206,18 @@ public class Server : IDisposable
         }
     }
 
+    public void SendDataToAllClients<Data_Type>(Data_Type data, bool isSafe = true)
+    {
+        var tempClients = _clients.Values;
+        foreach (ClientHandle clientHandle in tempClients)
+        {
+            if (!CheckClientConnection(clientHandle))
+                continue;
+
+            clientHandle.SendPacket(Serializer.GetPacket(data).ChangeSafty(isSafe));
+        }
+    }
+
     public bool SendPacketToClient(uint ID, Packet packet)
     {
         ClientHandle client = _clients[ID];
@@ -212,6 +225,17 @@ public class Server : IDisposable
             return false;
 
         client.SendPacket(packet);
+
+        return true;
+    }
+
+    public bool SendDataToClient<Data_Type>(uint ID, Data_Type data, bool isSafe = true)
+    {
+        ClientHandle client = _clients[ID];
+        if (!CheckClientConnection(client))
+            return false;
+
+        client.SendPacket(Serializer.GetPacket(data).ChangeSafty(isSafe));
 
         return true;
     }

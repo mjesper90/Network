@@ -101,6 +101,13 @@ public class Client : IDisposable
         _network?.SendPacket(packet);
     }
 
+    public void SendData<Data_Type>(Data_Type data, bool isSafe = true)
+    {
+        ThrowIfNotConnected();
+
+        _network?.SendPacket(Serializer.GetPacket(data).ChangeSafty(isSafe));
+    }
+
     public Packet[] ReadSafeData()
     {
         ThrowIfNotConnected();
