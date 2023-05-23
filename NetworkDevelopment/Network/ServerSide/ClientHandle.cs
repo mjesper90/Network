@@ -2,7 +2,7 @@
 using System.Net;
 using System.Net.Sockets;
 
-namespace Network.Server;
+namespace Network.ServerSide;
 
 public class ClientHandle : IDisposable
 {

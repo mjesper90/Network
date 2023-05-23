@@ -1,6 +1,6 @@
 ﻿using Network.Common;
 
-namespace Network.Server;
+namespace Network.ServerSide;
 
 public class ServerPacket : Packet
 {

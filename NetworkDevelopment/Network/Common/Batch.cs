@@ -3,7 +3,7 @@
 namespace Network.Common;
 
 [Serializable]
-internal class Batch<HeaderType, DataType>
+public class Batch<HeaderType, DataType>
 {
     HeaderType Header;
     DataType Data;

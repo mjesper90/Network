@@ -2,7 +2,7 @@
 using System.Net.Sockets;
 using Network.Common;
 
-namespace Network.Client;
+namespace Network.ClientSide;
 
 public class Client : IDisposable
 {
@@ -48,12 +48,24 @@ public class Client : IDisposable
 
         _server = serverAdress;
         TcpClient tcpClient = new TcpClient();
-        tcpClient.Connect(_server);
+        try
+        {
+            tcpClient.Connect(_server);
+        }
+        catch (Exception)
+        {
+            Logger.Log("Could not establish connection to server", LogWarningLevel.Info);
+            IsConnecting = false;
+            return;
+        }
 
         if (tcpClient.Connected)
         {
             // Send request
-            ConnectionRequest cR = new ConnectionRequest(_localAdress.Address, Consts.CLIENT_RECIVE_PORT, UserName);
+            int port = NetworkHelper.GetFreePort(Consts.CLIENT_RECIVE_PORT);
+
+
+            ConnectionRequest cR = new ConnectionRequest(_localAdress.Address, port, UserName);
 
             Packet requestData = Serializer.GetPacket(cR);
             var stream = tcpClient.GetStream();
@@ -79,7 +91,7 @@ public class Client : IDisposable
 
             Logger.Log("Connection established to server", LogWarningLevel.Succes);
 
-            _network = new Common.Network(tcpClient, serverAdress, Consts.CLIENT_RECIVE_PORT);
+            _network = new Common.Network(tcpClient, serverAdress, port);
             IsConnecting = false;
             return;
         }

@@ -2,7 +2,7 @@
 using System.Net;
 using Network.Common;
 
-namespace Network.Server;
+namespace Network.ServerSide;
 
 /*
  * Server and Client connect over TCP
@@ -18,12 +18,12 @@ public class Server : IDisposable
     public bool AcceptClients { get; set; } = true;
     public bool Disposed { get; private set; } = false;
 
-    //private List<ClientHandle> _clients = new List<ClientHandle>();
+    
+
     private Dictionary<uint, ClientHandle> _clients = new Dictionary<uint, ClientHandle>();
     private List<ClientHandle> _clientsDisconnected = new List<ClientHandle>();
     private int _clientPort = 5678; // Doing this and just adding one to the port for each client is a really bad ideer
     private uint _clientIDCounter = 0;
-    private byte[] data;
     private TcpListener _clientRequestListener = new TcpListener(IPAddress.Any, Consts.LISTENING_PORT);
     private CancellationToken cancellationToken = new CancellationToken();
     private IPEndPoint? _listenIPEndPoint = new IPEndPoint(IPAddress.Any, Consts.LISTENING_PORT);
@@ -31,8 +31,7 @@ public class Server : IDisposable
     public Server()
     {
         Logger.Log("Starting server up", LogWarningLevel.Info);
-
-        data = new byte[2048];
+        Logger.Log("Looking for clients on: " + GetIPEndPoint(), LogWarningLevel.Info);
 
         _clientRequestListener.Start();
         Task.Run(ListenForClient);
@@ -61,7 +60,6 @@ public class Server : IDisposable
         }
     }
 
-
     private void HandleClientConnection(TcpClient client)
     {
         if (Disposed)
@@ -76,7 +74,7 @@ public class Server : IDisposable
         }
     }
 
-    private unsafe bool ValidateConnectionRequest(TcpClient client, out IPEndPoint clientIP, out string userName)
+    private bool ValidateConnectionRequest(TcpClient client, out IPEndPoint clientIP, out string userName)
     {
         Logger.Log("Trying to validate client request", LogWarningLevel.Info);
 
@@ -92,6 +90,7 @@ public class Server : IDisposable
 
         var stream = client.GetStream();
         stream.ReadTimeout = 1000; // Wait for data for one seconds
+        byte[] data = new byte[1024];
         int bytesRead = stream.Read(data, 0, 1024);
 
         try
@@ -107,7 +106,7 @@ public class Server : IDisposable
 
             return true;
         }
-        catch (Exception e)
+        catch (Exception)
         {
             Logger.Log("Unable to connect to client do to error", LogWarningLevel.Warning);
             client.Dispose();
@@ -141,11 +140,11 @@ public class Server : IDisposable
         }
     }
 
-    public ClientHandle[] GetDisconnectedClients()
+    public ClientIdentifier[] GetDisconnectedClients()
     {
         var ClientsDisconnected = _clientsDisconnected.ToArray();
         _clientsDisconnected.Clear();
-        return ClientsDisconnected;
+        return ClientHandleToIdentifier(ClientsDisconnected);
     }
 
     private bool GetPacketFromClient(in ClientHandle client, List<ServerPacket> packets)
@@ -185,9 +184,14 @@ public class Server : IDisposable
     /// <summary>
     /// Not used for sending data. Should be removed so user cant send data through ClientHandles, wich is the servers job.
     /// </summary>
-    public ClientHandle[] GetCurrentClientHandles()
+    public ClientIdentifier[] GetCurrentClientHandles()
     {
-        return _clients.Values.ToArray();
+        return ClientHandleToIdentifier(_clients.Values.ToArray());
+    }
+
+    public int GetConnectedClientsCount()
+    {
+        return _clients.Count;
     }
 
     public void SendPacketToAllClients(Packet packet)
@@ -236,6 +240,14 @@ public class Server : IDisposable
         return true;
     }
 
+    private ClientIdentifier[] ClientHandleToIdentifier(ClientHandle[] handles)
+    {
+        ClientIdentifier[] identifiers = new ClientIdentifier[handles.Length];
+        for (int i = 0; i < handles.Length; i++)
+            identifiers[i] = new ClientIdentifier(handles[i].UserName, handles[i].ID);
+        return identifiers;
+    }
+
     public void Dispose()
     {
         Disposed = true;
@@ -246,5 +258,13 @@ public class Server : IDisposable
             clientHandle.Dispose();
 
         Disposed = true;
+    }
+
+    // Util
+
+    public IPEndPoint GetIPEndPoint()
+    {
+        IPEndPoint e = new IPEndPoint(NetworkHelper.GetLocalIPAddress(), Consts.LISTENING_PORT);
+        return e;
     }
 }

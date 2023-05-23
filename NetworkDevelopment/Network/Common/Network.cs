@@ -53,15 +53,15 @@ public class Network : IDisposable
         if (IsDisposed)
             return;
 
-        byte[] data = _udp.EndReceive(ar, ref _localRecivePort);
-
-        _unsafePackets.Add(new(data, data.Length, false));
-
-        if (IsConnected)
+        if (!IsConnected)
         {
             Dispose();
             return;
         }
+
+        byte[] data = _udp.EndReceive(ar, ref _localRecivePort);
+
+        _unsafePackets.Add(new(data, data.Length, false));
 
         _udp.BeginReceive(ReciveUDPData, null);
     }
@@ -71,17 +71,17 @@ public class Network : IDisposable
         if (IsDisposed)
             return;
 
+        if (!IsConnected)
+        {
+            Dispose();
+            return;
+        }
+        
         int count = _safeStream.EndRead(ar);
 
         byte[] data = new byte[count];
         Array.Copy(_tcpBuffer, data, count);
         _safePackets.Add(new(data, data.Length, true));
-
-        if (IsConnected)
-        {
-            Dispose();
-            return;
-        }
 
         _safeStream.BeginRead(_tcpBuffer, 0, _tcpBuffer.Length, ReciveTCPData, null);
     }
