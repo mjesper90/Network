@@ -1,6 +1,6 @@
 ﻿using Network;
 
-namespace UDP_Development;
+namespace Development;
 
 public class Logger_Helper
 {

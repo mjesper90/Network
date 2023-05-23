@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace UDP_Networker.Common;
+namespace Network.Common;
 
 public class ClientIdentifier
 {

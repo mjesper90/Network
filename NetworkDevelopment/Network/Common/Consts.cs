@@ -1,6 +1,4 @@
-﻿
-
-namespace Network.Common;
+﻿namespace Network.Common;
 
 public class Consts
 {

@@ -1,6 +1,4 @@
-﻿
-
-using System.Net.Sockets;
+﻿using System.Net.Sockets;
 using System.Net;
 
 namespace Network.Common;
