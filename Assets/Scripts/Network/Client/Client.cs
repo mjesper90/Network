@@ -3,6 +3,8 @@ using System.IO;
 using System.Net.Sockets;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading.Tasks;
+using NetworkLib.Common.DTOs;
+using NetworkLib.Common.Logger;
 
 namespace NetworkLib.GameClient
 {
@@ -15,11 +17,15 @@ namespace NetworkLib.GameClient
         private byte[] _tcpReceiveBuffer;
         private BinaryFormatter _binaryFormatter;
 
-        public Client(TcpClient socket)
+        // Logger
+        public static ILogNetwork Log;
+
+        public Client(ILogNetwork log, TcpClient socket)
         {
             _binaryFormatter = new BinaryFormatter();
             NetworkHandler = new Network(this);
             Tcp = socket;
+            Log = log;
             Tcp.ReceiveBufferSize = CONSTANTS.BufferSize;
             Tcp.SendBufferSize = CONSTANTS.BufferSize;
             _tcpStream = Tcp.GetStream();
@@ -34,6 +40,7 @@ namespace NetworkLib.GameClient
 
         public void Disconnect()
         {
+            Log.Log("Client disconnected");
             Tcp?.Close();
             Tcp = null;
             _tcpStream = null;
@@ -105,13 +112,13 @@ namespace NetworkLib.GameClient
                         object msg = Deserialize<object>(data);
                         if (msg is Message)
                         {
-                            NetworkHandler.MessageQueue.Enqueue((Message)msg);
+                            NetworkHandler.Enqueue((Message)msg);
                         }
                         if (msg is Message[])
                         {
                             foreach (Message message in (Message[])msg)
                             {
-                                NetworkHandler.MessageQueue.Enqueue(message);
+                                NetworkHandler.Enqueue(message);
                             }
                         }
                     }
@@ -125,7 +132,7 @@ namespace NetworkLib.GameClient
             }
             catch (Exception e)
             {
-                Console.WriteLine($"Error receiving TCP data: {e}");
+                Log.Log($"Error receiving TCP data: {e}");
                 Disconnect();
             }
         }

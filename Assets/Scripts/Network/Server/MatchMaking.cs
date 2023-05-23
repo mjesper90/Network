@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using NetworkLib.Common.DTOs;
 using NetworkLib.GameClient;
 
 namespace NetworkLib.GameServer
@@ -28,8 +29,8 @@ namespace NetworkLib.GameServer
         public void Join(Client client)
         {
             Matches[0].AddPlayer(client);
-            client.Send(new Message(MessageType.MatchJoined, new byte[0], ""));
-            UnityEngine.Debug.Log($"User {client.NetworkHandler.Conn.Username} joined match");
+            client.Send(new Message(MessageType.MatchJoined));
+            Server.Log.Log($"User {client.NetworkHandler.Auth.Username} joined match");
             client.NetworkHandler.InGame = true;
             client.NetworkHandler.InQueue = false;
         }

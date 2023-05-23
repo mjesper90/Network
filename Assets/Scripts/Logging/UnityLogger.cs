@@ -1,28 +1,10 @@
+using NetworkLib.Common.Logger;
 using UnityEngine;
-namespace NetworkLib.Logger
+namespace MyGame
 {
-    public class UnityLogger : MonoBehaviour, ILogNetwork
+    public class UnityLogger : ILogNetwork
     {
-        private static UnityLogger _instance;
         private static readonly object lockObject = new object();
-
-        private void Awake()
-        {
-            if (_instance == null)
-            {
-                _instance = this;
-                DontDestroyOnLoad(gameObject);
-            }
-            else
-            {
-                Destroy(gameObject);
-            }
-        }
-
-        public ILogNetwork Instance()
-        {
-            return _instance;
-        }
 
         public void Log(string message)
         {

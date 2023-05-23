@@ -1,4 +1,4 @@
-//TODO: Refactor
+//TODO: Refactor to be config files
 using UnityEngine;
 
 public static class CONSTANTS

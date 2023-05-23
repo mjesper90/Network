@@ -6,11 +6,75 @@ namespace MyGame{
         class PlayerPosition{}
         class Position{}
         class User{}
+        class UnityLogger{}
     }
+    class GameController <<MonoBehaviour>>{
+        + void Awake()
+        + void Start()
+        + void Update()
+        + void SetServer(Server server)
+        + void SetClient(Client client)
+        + Server GetServer()
+        + Client GetClient()
+        - void HandleMessage(Message msg)
+    }
+
     namespace NetworkLib{
-        class Connection{
-            + string Username
-            + string Password
+        namespace Facade{
+            interface I_SSSNH_Facade{
+                + event Action<Message> OnMessage
+                + I_SSSNH_Facade Start(TCP)
+                + I_SSSNH_Facade Start(UDP)
+                + I_SSSNH_Facade[] Start(TCP,UDP)
+                + void Stop()
+            }
+
+            abstract class A_SSSNH_Client
+            {
+                + event Action<Message> OnMessage
+                + void Send(Message msg)
+                + void SendAsync(Message msg)
+            }
+
+            class SSSNH_Client{
+
+            }
+
+            abstract class A_SSSNH_Server
+            {
+                + event Action<Message> OnMessage
+                + event Action<Message> OnClientConnected
+                + event Action<Message> OnClientDisconnected
+            }
+
+            class SSSNH_Server{
+
+            }
+
+            Super_Seje_Starter_Networking_Helper <|-- A_SSSNH_Client
+            Super_Seje_Starter_Networking_Helper <|-- A_SSSNH_Server
+            A_SSSNH_Client <|-- SSSNH_Client
+            A_SSSNH_Server <|-- SSSNH_Server
+        }
+
+        namespace Common{
+            namespace DTOs{
+                class Authentication{
+                    + string Username
+                    + string Password
+                }
+            }
+            namespace Logger{
+                interface ILogNetwork{
+                    + void Log(string message);
+                    + void LogWarning(string message);
+                    + void LogError(string message);
+                }
+                class DefaultLogger{
+
+                }
+                DefaultLogger -up-|> ILogNetwork
+            }
         }
         interface IClient{
             + bool IsConnected()
@@ -26,14 +90,7 @@ namespace MyGame{
             + void UpdateServer()
             + void Shutdown()
         }
-        namespace Logger{
-            interface ILogNetwork{
-                + ILogNetwork Instance();
-                + void Log(string message);
-                + void LogWarning(string message);
-                + void LogError(string message);
-            }
-        }
+
         namespace GameClient{
             class Client {
                 + TcpClient Tcp;
@@ -41,7 +98,8 @@ namespace MyGame{
                 - NetworkStream _tcpStream;
                 - byte[] _TcpReceiveBuffer;
                 - BinaryFormatter _br;
-                + Client(TcpClient socket)
+                + {static} ILogNetwork Log
+                + Client(ILogNetwork log, TcpClient socket)
                 - void RecieveCallback(IAsyncResult ar)
             }
             class Network {
@@ -59,7 +117,8 @@ namespace MyGame{
                 + TcpListener TCPListener
                 + List<Client> Clients
                 + MatchMaking MatchMaking
-                + Server(int port)
+                + {static} ILogNetwork Log
+                + Server(ILogNetwork log, int port)
                 - void TCPAcceptCallback(IAsyncResult ar)
                 - void CheckClientQueues()
             }
@@ -106,23 +165,8 @@ namespace MyGame{
         + {static} float JumpForce
     }
 
-    class Player <<MonoBehaviour>>{
-
-    }
-    class Enemy <<MonoBehaviour>>{
-
-    }
     namespace NetworkSetup{
-        class GameController <<MonoBehaviour>>{
-            + void Awake()
-            + void Start()
-            + void Update()
-            + void SetServer(Server server)
-            + void SetClient(Client client)
-            + Server GetServer()
-            + Client GetClient()
-            - void HandleMessage(Message msg)
-        }
+
         class ClientInit <<MonoBehaviour>>{
             + string IP = "127.0.0.1"
             + int Port = 8052
@@ -136,35 +180,26 @@ namespace MyGame{
             + void FixedUpdate()
             + void OnApplicationQuit()
         }
-        class UnityLogger <<MonoBehaviour>>{
-            + void Awake()
-            + void Log(string message)
-            + void LogWarning(string message)
-            + void LogError(string message)
-        }
+        class UnityLogger{}
     }
 }
 
 
 MyGame::NetworkLib::GameClient::Client *-- MyGame::NetworkLib::GameClient::Network
-MyGame::NetworkSetup::GameController *-- MyGame::Enemy
-MyGame::NetworkSetup::GameController *-- MyGame::Player
-MyGame::NetworkSetup::GameController -- MyGame::NetworkLib::GameClient::Network : Dequeues
 
 MyGame::NetworkSetup::ClientInit *-- MyGame::NetworkLib::GameClient::Client
 MyGame::NetworkSetup::ServerInit *-- MyGame::NetworkLib::GameServer::Server
 
 MyGame::NetworkLib::GameServer::Server *-- MyGame::NetworkLib::GameServer::MatchMaking
-MyGame::NetworkLib::GameServer::Server *-- MyGame::NetworkLib::GameServer::Client
+MyGame::NetworkLib::GameServer::Server *-- MyGame::NetworkLib::GameClient::Client
 MyGame::NetworkLib::GameServer::MatchMaking *-- MyGame::NetworkLib::GameServer::Match
-MyGame::NetworkLib::GameServer::Match *-- MyGame::NetworkLib::GameClient::Client
-
-MyGame::NetworkLib::Logger::ILogNetwork <|-- MyGame::NetworkSetup::UnityLogger
+MyGame::NetworkLib::GameServer::Match o-- MyGame::NetworkLib::GameClient::Client
 
 MyGame::NetworkLib::IClient <|-- MyGame::NetworkLib::GameClient::Client
 MyGame::NetworkLib::IServer <|-- MyGame::NetworkLib::GameServer::Server
 
-MyGame::NetworkLib::GameServer::Server *-- MyGame::NetworkLib::Connection
-MyGame::NetworkLib::GameClient::Network *-- MyGame::NetworkLib::Connection
+MyGame::NetworkLib::GameServer::Server *-- MyGame::NetworkLib::Common::DTOs::Authentication
+MyGame::NetworkLib::GameClient::Network *-- MyGame::NetworkLib::Common::DTOs::Authentication
+
 
 @enduml

@@ -2,6 +2,8 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using NetworkLib.GameClient;
+using NetworkLib.Common.Logger;
+using NetworkLib.Common.DTOs;
 
 namespace NetworkLib.GameServer
 {
@@ -10,17 +12,32 @@ namespace NetworkLib.GameServer
         public int Port { get; private set; }
         public TcpListener TCPListener;
         public List<Client> Clients = new List<Client>();
+
+        // Matchmaking
         public MatchMaking MatchMaking = new MatchMaking();
 
-        public Server(int port)
+        // Logger
+        public static ILogNetwork Log;
+
+        public Server(ILogNetwork log, int port)
         {
             Port = port;
+            Log = log;
             TCPListener = new TcpListener(IPAddress.Any, Port);
             TCPListener.Start();
             AcceptClientsAsync();
         }
 
-        // Polling for messages
+        public Server(int port)
+        {
+            Port = port;
+            Log = new DefaultLogger();
+            TCPListener = new TcpListener(IPAddress.Any, Port);
+            TCPListener.Start();
+            AcceptClientsAsync();
+        }
+
+        // Polling for message queues
         public void UpdateServer()
         {
             MatchMaking.UpdateMatches();
@@ -30,6 +47,7 @@ namespace NetworkLib.GameServer
         // Shutdown and clear
         public void Shutdown()
         {
+            Log.Log("Server shutting down");
             foreach (Client client in Clients)
             {
                 client.Disconnect();
@@ -43,8 +61,9 @@ namespace NetworkLib.GameServer
             while (true)
             {
                 TcpClient tcp = await TCPListener.AcceptTcpClientAsync();
-                Client client = new Client(tcp);
+                Client client = new Client(Log, tcp);
                 Clients.Add(client);
+                Log.Log($"Client {client.NetworkHandler.Auth?.Username} connected");
             }
         }
 
@@ -59,15 +78,15 @@ namespace NetworkLib.GameServer
                     {
                         continue;
                     }
-                    UnityEngine.Debug.Log($"Client {client.NetworkHandler.Conn?.Username} has {client.NetworkHandler.MessageQueue.Count} messages");
-                    while (client.NetworkHandler.MessageQueue.TryDequeue(out Message msg))
+                    Log.Log($"Client {client.NetworkHandler.Auth?.Username} has {client.NetworkHandler.GetQueueSize()} messages");
+                    while (client.NetworkHandler.TryDequeue(out Message msg))
                     {
                         ProcessMessage(client, msg);
                     }
                 }
                 else
                 {
-                    UnityEngine.Debug.Log($"Client {client.NetworkHandler.Conn?.Username} is disconnected");
+                    Log.Log($"Client {client.NetworkHandler.Auth?.Username} is disconnected");
                     disconnectedClients.Add(client);
                 }
             }
@@ -76,16 +95,16 @@ namespace NetworkLib.GameServer
 
         private void ProcessMessage(Client client, Message msg)
         {
-            if (msg.MsgType == MessageType.Login && client.NetworkHandler.Conn == null)
+            if (msg.MsgType == MessageType.Login && client.NetworkHandler.Auth == null)
             {
-                client.NetworkHandler.Conn = client.Deserialize<Connection>(msg.Data);
-                UnityEngine.Debug.Log($"User {client.NetworkHandler.Conn.Username} logged in");
-                client.Send(new Message(MessageType.LoginResponse, new byte[0], ""));
+                client.NetworkHandler.Auth = client.Deserialize<Authentication>(msg.Data);
+                Log.Log($"User {client.NetworkHandler.Auth.Username} logged in");
+                client.Send(new Message(MessageType.LoginResponse));
             }
-            if (msg.MsgType == MessageType.JoinQueue && client.NetworkHandler.Conn != null)
+            if (msg.MsgType == MessageType.JoinQueue && client.NetworkHandler.Auth != null)
             {
                 client.NetworkHandler.InQueue = true;
-                UnityEngine.Debug.Log($"User {client.NetworkHandler.Conn.Username} joined queue");
+                Log.Log($"User {client.NetworkHandler.Auth.Username} joined queue");
                 MatchMaking.Join(client);
             }
         }

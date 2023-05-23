@@ -1,24 +1,24 @@
-using System.Collections;
-using DTOs;
 using UnityEngine;
-
-public class Weapon : MonoBehaviour
+namespace MyGame
 {
-    public Transform Nozzle;
-    public Player Owner;
-    private GameObject _projectilePrefab;
-
-    public void Start()
+    public class Weapon : MonoBehaviour
     {
-        _projectilePrefab = Resources.Load(CONSTANTS.ProjectilePrefab) as GameObject;
-    }
+        public Transform Nozzle;
+        public Player Owner;
+        private GameObject _projectilePrefab;
 
-    public MonoProjectile PewPew(bool local = false)
-    {
-        GameObject projectile = Instantiate(_projectilePrefab, Nozzle.position, Nozzle.rotation);
-        MonoProjectile p = projectile.GetComponent<MonoProjectile>();
+        public void Start()
+        {
+            _projectilePrefab = Resources.Load(CONSTANTS.ProjectilePrefab) as GameObject;
+        }
 
-        p.Launch(local);
-        return p;
+        public MonoProjectile PewPew(bool local = false)
+        {
+            GameObject projectile = Instantiate(_projectilePrefab, Nozzle.position, Nozzle.rotation);
+            MonoProjectile p = projectile.GetComponent<MonoProjectile>();
+
+            p.Launch(local);
+            return p;
+        }
     }
 }
