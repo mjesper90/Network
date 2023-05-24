@@ -6,11 +6,11 @@ namespace NetworkLib.GameServer
 {
     public class MatchMaking
     {
-        public List<Match> Matches = new List<Match>();
+        public List<IMatch> Matches;
 
-        public MatchMaking()
+        public MatchMaking(IMatch match)
         {
-            Matches.Add(new Match());
+            Matches = new List<IMatch>() { match };
         }
 
         public void UpdateMatches()
@@ -19,7 +19,7 @@ namespace NetworkLib.GameServer
             {
                 match.UpdateState();
                 Message[] messages = match.GetState();
-                foreach (Client client in match.Clients.Values)
+                foreach (Client client in match.GetClients())
                 {
                     _ = client.SendAsync(messages);
                 }

@@ -5,13 +5,17 @@ using NetworkLib.GameClient;
 
 namespace NetworkLib.GameServer
 {
-    public class Match
+    public class Match : IMatch
     {
-        public ConcurrentDictionary<string, Client> Clients = new ConcurrentDictionary<string, Client>();
-        protected ConcurrentDictionary<string, Message> _playerPositions = new ConcurrentDictionary<string, Message>();
+        protected ConcurrentDictionary<string, Client> Clients = new ConcurrentDictionary<string, Client>();
 
         public Match()
         {
+        }
+
+        public virtual Client[] GetClients()
+        {
+            return Clients.Values.ToArray();
         }
 
         public virtual void AddPlayer(Client client)
@@ -44,7 +48,7 @@ namespace NetworkLib.GameServer
 
         public virtual Message[] GetState()
         {
-            return _playerPositions.Values.ToArray();
+            return new Message[] { };
         }
 
         public virtual void UpdateState()
@@ -61,13 +65,8 @@ namespace NetworkLib.GameServer
                     {
                         switch (msg.MsgType)
                         {
-                            case MessageType.User:
-                                //client.NetworkHandler.User = client.Deserialize<User>(msg.Data);
-                                Server.Log.Log("Match handling User" + client.NetworkHandler.Auth);
-                                break;
-                            case MessageType.PlayerPosition:
-                                _playerPositions[client.NetworkHandler.Auth.Username] = msg;
-                                Server.Log.Log("Match handling PlayerPosition " + client.NetworkHandler.Auth.Username);
+                            case MessageType.Message:
+                                Server.Log.Log($"Match handling Message {msg.MsgType}");
                                 break;
                             default:
                                 Server.Log.Log($"Unhandled message type {msg.MsgType}");
@@ -77,6 +76,13 @@ namespace NetworkLib.GameServer
                 }
             }
         }
-    
+
+        public virtual void Broadcast(Message msg)
+        {
+            foreach (Client client in Clients.Values)
+            {
+                _ = client.SendAsync(msg);
+            }
+        }
     }
 }

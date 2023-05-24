@@ -124,7 +124,7 @@ namespace NetworkLib.GameClient
                     }
                     else
                     {
-                        Console.WriteLine("Client disconnected");
+                        Log.Log("Received 0 bytes - Disconnecting");
                         Disconnect();
                         break;
                     }

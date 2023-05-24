@@ -14,15 +14,16 @@ namespace NetworkLib.GameServer
         public List<Client> Clients = new List<Client>();
 
         // Matchmaking
-        public MatchMaking MatchMaking = new MatchMaking();
+        public MatchMaking MatchMaking;
 
         // Logger
         public static ILogNetwork Log;
 
-        public Server(ILogNetwork log, int port)
+        public Server(ILogNetwork log, int port, IMatch match)
         {
             Port = port;
             Log = log;
+            MatchMaking = new MatchMaking(match);
             TCPListener = new TcpListener(IPAddress.Any, Port);
             TCPListener.Start();
             AcceptClientsAsync();
@@ -32,6 +33,7 @@ namespace NetworkLib.GameServer
         {
             Port = port;
             Log = new DefaultLogger();
+            MatchMaking = new MatchMaking(new Match());
             TCPListener = new TcpListener(IPAddress.Any, Port);
             TCPListener.Start();
             AcceptClientsAsync();
@@ -63,7 +65,7 @@ namespace NetworkLib.GameServer
                 TcpClient tcp = await TCPListener.AcceptTcpClientAsync();
                 Client client = new Client(Log, tcp);
                 Clients.Add(client);
-                Log.Log($"Client {client.NetworkHandler.Auth?.Username} connected");
+                Log.Log($"Client connected");
             }
         }
 
@@ -78,7 +80,7 @@ namespace NetworkLib.GameServer
                     {
                         continue;
                     }
-                    Log.Log($"Client {client.NetworkHandler.Auth?.Username} has {client.NetworkHandler.GetQueueSize()} messages");
+                    //Log.Log($"Client {client.NetworkHandler.Auth?.Username} has {client.NetworkHandler.GetQueueSize()} messages");
                     while (client.NetworkHandler.TryDequeue(out Message msg))
                     {
                         ProcessMessage(client, msg);

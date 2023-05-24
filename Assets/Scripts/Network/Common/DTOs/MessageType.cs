@@ -13,6 +13,7 @@ namespace NetworkLib.Common.DTOs
         Login,
         JoinQueue,
         LoginResponse,
-        MatchJoined
+        MatchJoined,
+        PlayerRotation
     }
 }

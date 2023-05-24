@@ -85,11 +85,13 @@ namespace MyGame{
             }
             class Network {
                 + Client Client
-                + User User = null
+                + Authentication Auth = null
                 + bool InGame = false
                 + bool InQueue = false
-                + ConcurrentQueue<Message> ActionQueue
+                - ConcurrentQueue<Message> _msgQueue
                 + Network(Client client)
+                + void Enqueue(Message msg)
+                + bool TryDequeue(out Message msg)
             }
         }
         namespace GameServer{
@@ -163,14 +165,14 @@ MyGame::NetworkLib::GameServer::Match o-- MyGame::NetworkLib::GameClient::Client
 MyGame::NetworkLib::IClient <|-- MyGame::NetworkLib::GameClient::Client
 MyGame::NetworkLib::IServer <|-- MyGame::NetworkLib::GameServer::Server
 
-MyGame::NetworkLib::GameServer::Server *-- MyGame::NetworkLib::Common::DTOs::Authentication
 MyGame::NetworkLib::GameClient::Network *-- MyGame::NetworkLib::Common::DTOs::Authentication
 
 MyGame::UnityLogger --|> MyGame::NetworkLib::Common::Logger::ILogNetwork
 
 MyGame::Client::ClientInit *-- MyGame::NetworkLib::GameClient::Client
 MyGame::Server::ServerInit *-- MyGame::NetworkLib::GameServer::Server
-MyGame::Server::NotQuakeMatch <|-- MyGame::NetworkLib::GameServer::Match
+MyGame::Server::NotQuakeMatch -up-|> MyGame::NetworkLib::GameServer::Match
+MyGame::Server::ServerInit *-- MyGame::Server::NotQuakeMatch
 
 MyGame::GameController -- MyGame::NetworkLib::GameClient::Network : "dequeues"
 
