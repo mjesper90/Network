@@ -43,14 +43,23 @@ namespace NetworkLib.GameServer
         // Shutdown and clear
         public void Shutdown()
         {
+            if (shuttingDown)
+            {
+                return; // Server is already shutting down
+            }
+
             Log.Log("Server shutting down");
             shuttingDown = true;
+
             foreach (Client client in Clients)
             {
                 client.Disconnect();
             }
+
+            Clients.Clear();
             TCPListener.Stop();
         }
+
 
         // Accept new connections asynchronously
         private async void AcceptClientsAsync()

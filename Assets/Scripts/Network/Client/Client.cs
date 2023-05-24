@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Net.Sockets;
+using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading.Tasks;
 using NetworkLib.Common.DTOs;
@@ -49,9 +50,21 @@ namespace NetworkLib.GameClient
 
         public async Task SendAsync(byte[] bytes)
         {
-            if (_tcpStream.CanWrite)
+            try
             {
-                await _tcpStream.WriteAsync(bytes, 0, bytes.Length);
+                if (_tcpStream.CanWrite)
+                {
+                    await _tcpStream.WriteAsync(bytes, 0, bytes.Length);
+                }
+                else
+                {
+                    Log.LogWarning("Cannot write to the network stream.");
+                }
+            }
+            catch (Exception e)
+            {
+                Log.LogWarning($"Error sending data: {e}");
+                Disconnect();
             }
         }
 
@@ -60,7 +73,7 @@ namespace NetworkLib.GameClient
             if (_tcpStream.CanWrite)
             {
                 byte[] bytes = Serialize(obj);
-                await _tcpStream.WriteAsync(bytes, 0, bytes.Length);
+                await SendAsync(bytes);
             }
         }
 
@@ -83,9 +96,17 @@ namespace NetworkLib.GameClient
 
         public T Deserialize<T>(byte[] data)
         {
-            using (MemoryStream ms = new MemoryStream(data))
+            try
             {
-                return (T)_binaryFormatter.Deserialize(ms);
+                using (MemoryStream ms = new MemoryStream(data))
+                {
+                    return (T)_binaryFormatter.Deserialize(ms);
+                }
+            }
+            catch (SerializationException e)
+            {
+                Log.LogWarning($"Error deserializing data: {e}");
+                return default(T);
             }
         }
 
@@ -130,11 +151,18 @@ namespace NetworkLib.GameClient
                     }
                 }
             }
+            catch (IOException e)
+            {
+                Log.LogWarning($"IOException while receiving TCP data: {e}");
+                Disconnect();
+                throw;
+            }
             catch (Exception e)
             {
                 Log.LogWarning($"Error receiving TCP data: {e}");
                 Disconnect();
             }
         }
+
     }
 }
