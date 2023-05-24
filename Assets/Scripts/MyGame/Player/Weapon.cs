@@ -1,4 +1,5 @@
 using UnityEngine;
+
 namespace MyGame
 {
     public class Weapon : MonoBehaviour

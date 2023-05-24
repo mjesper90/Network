@@ -1,4 +1,3 @@
-using System;
 using System.Net.Sockets;
 using MyGame.DTOs;
 using NetworkLib.Common.DTOs;
@@ -40,6 +39,7 @@ namespace MyGame.NetworkSetup
                 Vector3 pos = p.transform.position;
                 PlayerPosition player = new PlayerPosition(p.GetUser().Username, pos.x, pos.y, pos.z);
                 _ = Client.SendAsync(new Message(MessageType.PlayerPosition, Client.Serialize(player)));
+                _ = Client.SendAsync(new Message(MessageType.PlayerRotation, Client.Serialize(new PlayerRotation(p.GetUser().Username, p.transform.rotation.eulerAngles.y))));
             }
             else
             {
@@ -59,7 +59,7 @@ namespace MyGame.NetworkSetup
             }
             catch (SocketException e)
             {
-                Debug.Log("Socket exception: " + e.Message);
+                Debug.LogWarning("Socket exception: " + e.Message);
                 Client = null;
             }
         }

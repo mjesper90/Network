@@ -83,10 +83,12 @@ public class NetworkTesting
         _client2.NetworkHandler.ClearQueue();
     }
 
-    // Testing the client is connected and the server has exactly one client
+    // Testing the client is connected and the server has exactly two clients
     [Test]
     public void Connectivity()
     {
+        Assert.IsTrue(_client.IsConnected());
+        Assert.IsTrue(_client2.IsConnected());
         Assert.IsTrue(_server.Clients.Count == 2);
     }
 

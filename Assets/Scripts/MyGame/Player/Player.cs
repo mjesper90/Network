@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using MyGame.DTOs;
 using UnityEngine;
@@ -153,6 +154,24 @@ namespace MyGame
                 yield return new WaitForEndOfFrame();
             }
             transform.position = vector3;
+        }
+
+        public void LerpRotation(float eulerAnglesY)
+        {
+            StartCoroutine(LerpRotationCoroutine(eulerAnglesY, CONSTANTS.ServerSpeed));
+        }
+
+        private IEnumerator LerpRotationCoroutine(float eulerAnglesY, float serverSpeed)
+        {
+            float elapsedTime = 0;
+            float startingRotation = transform.eulerAngles.y;
+            while (elapsedTime < serverSpeed)
+            {
+                transform.eulerAngles = new Vector3(transform.eulerAngles.x, Mathf.LerpAngle(startingRotation, eulerAnglesY, (elapsedTime / serverSpeed)), transform.eulerAngles.z);
+                elapsedTime += Time.deltaTime;
+                yield return new WaitForEndOfFrame();
+            }
+            transform.eulerAngles = new Vector3(transform.eulerAngles.x, eulerAnglesY, transform.eulerAngles.z);
         }
     }
 }

@@ -40,7 +40,7 @@ namespace NetworkLib.GameClient
 
         public void Disconnect()
         {
-            Log.Log("Client disconnected");
+            Log.LogWarning("Client disconnected");
             Tcp?.Close();
             Tcp = null;
             _tcpStream = null;
@@ -124,7 +124,7 @@ namespace NetworkLib.GameClient
                     }
                     else
                     {
-                        Log.Log("Received 0 bytes - Disconnecting");
+                        Log.LogWarning("Received 0 bytes - Disconnecting");
                         Disconnect();
                         break;
                     }
@@ -132,7 +132,7 @@ namespace NetworkLib.GameClient
             }
             catch (Exception e)
             {
-                Log.Log($"Error receiving TCP data: {e}");
+                Log.LogWarning($"Error receiving TCP data: {e}");
                 Disconnect();
             }
         }

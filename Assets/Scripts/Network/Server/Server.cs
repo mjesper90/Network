@@ -4,6 +4,7 @@ using System.Net.Sockets;
 using NetworkLib.GameClient;
 using NetworkLib.Common.Logger;
 using NetworkLib.Common.DTOs;
+using System;
 
 namespace NetworkLib.GameServer
 {
@@ -18,6 +19,7 @@ namespace NetworkLib.GameServer
 
         // Logger
         public static ILogNetwork Log;
+        private bool shuttingDown;
 
         public Server(ILogNetwork log, int port, IMatch match)
         {
@@ -29,15 +31,7 @@ namespace NetworkLib.GameServer
             AcceptClientsAsync();
         }
 
-        public Server(int port)
-        {
-            Port = port;
-            Log = new DefaultLogger();
-            MatchMaking = new MatchMaking(new Match());
-            TCPListener = new TcpListener(IPAddress.Any, Port);
-            TCPListener.Start();
-            AcceptClientsAsync();
-        }
+        public Server(int port) : this(new DefaultLogger(), port, new Match()) {; }
 
         // Polling for message queues
         public void UpdateServer()
@@ -50,6 +44,7 @@ namespace NetworkLib.GameServer
         public void Shutdown()
         {
             Log.Log("Server shutting down");
+            shuttingDown = true;
             foreach (Client client in Clients)
             {
                 client.Disconnect();
@@ -60,12 +55,20 @@ namespace NetworkLib.GameServer
         // Accept new connections asynchronously
         private async void AcceptClientsAsync()
         {
-            while (true)
+            while (!shuttingDown)
             {
-                TcpClient tcp = await TCPListener.AcceptTcpClientAsync();
-                Client client = new Client(Log, tcp);
-                Clients.Add(client);
-                Log.Log($"Client connected");
+                try
+                {
+                    TcpClient tcp = await TCPListener.AcceptTcpClientAsync();
+                    Client client = new Client(Log, tcp);
+                    Clients.Add(client);
+                    Log.Log($"Client connected");
+                }
+                catch (Exception e)
+                {
+                    Log.LogWarning($"Exception: {e.Message}");
+                    break;
+                }
             }
         }
 

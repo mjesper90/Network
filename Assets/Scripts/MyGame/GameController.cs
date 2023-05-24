@@ -48,6 +48,64 @@ namespace MyGame
             LocalPlayer.IsLocal = true;
         }
 
+        public void Update()
+        {
+            if (_client == null)
+                _client = ClientInit.Instance.Client;
+            while (_client?.NetworkHandler.GetQueueSize() > 0)
+            {
+                if (_client.NetworkHandler.TryDequeue(out Message msg))
+                    HandleMessage(msg);
+            }
+        }
+
+        private void HandleMessage(Message msg)
+        {
+            Debug.Log("Message received " + msg.MsgType);
+            switch (msg.MsgType)
+            {
+                case MessageType.LoginResponse:
+                    LocalPlayer.LoggedIn = true;
+                    Players.Add(LocalPlayer.GetUser().Username, LocalPlayer.gameObject);
+                    CanvasController.Instance.QueueButton.interactable = true;
+                    CanvasController.Instance.LoginButton.interactable = false;
+                    break;
+                case MessageType.Message:
+                    Debug.Log("Message " + _client.Deserialize<string>(msg.Data));
+                    break;
+                case MessageType.User:
+                    User user = _client.Deserialize<User>(msg.Data);
+                    UserReceived(user);
+                    break;
+                case MessageType.PlayerPosition:
+                    PlayerPosition player = _client.Deserialize<PlayerPosition>(msg.Data);
+                    PlayerPositionReceived(player);
+                    break;
+                case MessageType.MatchJoined:
+                    CanvasController.Instance.QueueButton.interactable = false;
+                    LocalPlayer.InGame = true;
+                    break;
+                case MessageType.PlayerRotation:
+                    PlayerRotation playerRotation = _client.Deserialize<PlayerRotation>(msg.Data);
+                    PlayerRotationReceived(playerRotation);
+                    break;
+                default:
+                    Debug.Log("Unknown message type");
+                    break;
+            }
+        }
+
+        private void PlayerRotationReceived(PlayerRotation pr)
+        {
+            if (Players.ContainsKey(pr.Username))
+            {
+                if (pr.Username != LocalPlayer.GetUser().Username)
+                {
+                    Players[pr.Username].GetComponent<Player>().LerpRotation(pr.Y);
+                }
+            }
+        }
+
         private void PlayerPositionReceived(PlayerPosition user)
         {
             try
@@ -70,49 +128,6 @@ namespace MyGame
             catch (Exception e)
             {
                 Debug.Log(e.Message);
-            }
-        }
-
-        public void Update()
-        {
-            if (_client == null)
-                _client = ClientInit.Instance.Client;
-            while (_client?.NetworkHandler.GetQueueSize() > 0)
-            {
-                if (_client.NetworkHandler.TryDequeue(out Message msg))
-                    HandleMessage(msg);
-            }
-        }
-
-        private void HandleMessage(Message msg)
-        {
-            Debug.Log("Message received " + msg.MsgType);
-            switch (msg.MsgType)
-            {
-                case MessageType.LoginResponse:
-                    Debug.Log("Login response received");
-                    LocalPlayer.LoggedIn = true;
-                    Players.Add(LocalPlayer.GetUser().Username, LocalPlayer.gameObject);
-                    CanvasController.Instance.QueueButton.interactable = true;
-                    CanvasController.Instance.LoginButton.interactable = false;
-                    break;
-                case MessageType.Message:
-                    Debug.Log("Message received " + _client.Deserialize<string>(msg.Data));
-                    break;
-                case MessageType.User:
-                    User user = _client.Deserialize<User>(msg.Data);
-                    UserReceived(user);
-                    break;
-                case MessageType.PlayerPosition:
-                    PlayerPosition player = _client.Deserialize<PlayerPosition>(msg.Data);
-                    PlayerPositionReceived(player);
-                    break;
-                case MessageType.MatchJoined:
-                    LocalPlayer.InGame = true;
-                    break;
-                default:
-                    Debug.Log("Unknown message type");
-                    break;
             }
         }
 

@@ -4,7 +4,6 @@ using UnityEngine;
 //#TODO: Figure out what to do with this
 public class MonoProjectile : MonoBehaviour
 {
-
     public void Launch(bool local = false)
     {
         if (local)
