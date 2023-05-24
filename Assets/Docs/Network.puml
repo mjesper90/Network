@@ -1,14 +1,14 @@
 @startuml
 
 set separator ::
-namespace MyGame{
-    namespace DTOs{
+namespace MyGame #LightBlue{
+    namespace DTOs #LightSlateGray{
         class PlayerPosition{}
         class Position{}
         class User{}
         class UnityLogger{}
     }
-    class GameController <<MonoBehaviour>>{
+    class GameController <<MonoBehaviour>> #LightSlateGray {
         + void Awake()
         + void Start()
         + void Update()
@@ -19,9 +19,9 @@ namespace MyGame{
         - void HandleMessage(Message msg)
     }
 
-    namespace NetworkLib{
-        namespace Common{
-            namespace DTOs{
+    namespace NetworkLib #LightGray{
+        namespace Common #LightYellow{
+            namespace DTOs #LightGreen{
                 class Authentication{
                     + string Username
                     + string Password
@@ -45,7 +45,7 @@ namespace MyGame{
                     MatchJoined
                 }
             }
-            namespace Logger{
+            namespace Logger #LightGreen{
                 interface ILogNetwork{
                     + void Log(string message);
                     + void LogWarning(string message);
@@ -72,7 +72,7 @@ namespace MyGame{
             + void Shutdown()
         }
 
-        namespace GameClient{
+        namespace GameClient #LightYellow{
             class Client {
                 + TcpClient Tcp;
                 + Network NetworkHandler;
@@ -94,7 +94,7 @@ namespace MyGame{
                 + bool TryDequeue(out Message msg)
             }
         }
-        namespace GameServer{
+        namespace GameServer #LightYellow{
             class Server{
                 + int Port
                 + TcpListener TCPListener
@@ -122,7 +122,7 @@ namespace MyGame{
 
     }
 
-    struct CONSTANTS <<static>> {
+    struct CONSTANTS <<static>> #LightSlateGray {
         + {static} int PORT
         + {static} Vector3 CameraOffset
         + {static} float Gravity
@@ -131,7 +131,7 @@ namespace MyGame{
         + {static} float JumpForce
     }
 
-    namespace Client{
+    namespace Client #LightSlateGray{
         class ClientInit <<MonoBehaviour>>{
             + string IP = "127.0.0.1"
             + int Port = 8052
@@ -141,7 +141,7 @@ namespace MyGame{
             # void FixedUpdate()
         }
     }
-    namespace Server{
+    namespace Server #LightSlateGray{
         class ServerInit <<MonoBehaviour>>{
             + void Start()
             + void FixedUpdate()
@@ -151,7 +151,9 @@ namespace MyGame{
 
         }
     }
-    class UnityLogger{}
+    class UnityLogger #LightSlateGray {
+
+    }
 
 }
 
