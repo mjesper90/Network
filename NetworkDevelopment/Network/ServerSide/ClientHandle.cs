@@ -25,7 +25,7 @@ public class ClientHandle : IDisposable
     }
 
     /// <summary>
-    /// Read data send by the client over TCP
+    /// Read packets send by the client over TCP
     /// </summary>
     public Packet[] ReadSafeData()
     {
@@ -33,7 +33,7 @@ public class ClientHandle : IDisposable
     }
 
     /// <summary>
-    /// Read data packets send by the client over UDP
+    /// Read packets packets send by the client over UDP
     /// </summary>
     public Packet[] ReadUnsafeData()
     {
@@ -41,7 +41,7 @@ public class ClientHandle : IDisposable
     }
 
     /// <summary>
-    /// Send data to client over UDP
+    /// Send packet to client
     /// </summary>
     public void SendPacket(Packet packet)
     {

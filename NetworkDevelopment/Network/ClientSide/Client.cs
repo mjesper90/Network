@@ -6,8 +6,8 @@ namespace Network.ClientSide;
 
 public class Client : IDisposable
 {
-    private IPEndPoint _server;
-    private IPAddress _localAdress;
+    private IPEndPoint _serverIP;
+    private IPEndPoint _localEndpoint;
 
     private Common.Network? _network;
 
@@ -19,8 +19,8 @@ public class Client : IDisposable
 
     public Client(string userName)
     {
-        _server = new IPEndPoint(0, 0);
-        _localAdress = NetworkHelper.GetLocalIPAddress();
+        _serverIP = new IPEndPoint(0, 0);
+        _localEndpoint = new IPEndPoint(NetworkHelper.GetLocalIPAddress(), 0);
 
         UserName = userName;
     }
@@ -32,11 +32,10 @@ public class Client : IDisposable
         _ = Task.Run(() => InternalConnectToServer(serverAdress));
     }
 
-    public /*async*/ void Connect(IPEndPoint serverAdress)
+    public  void Connect(IPEndPoint serverAdress)
     {
         Disconnect();
 
-        //await Task.Run(() => InternalConnectToServer(serverAdress));
         InternalConnectToServer(serverAdress);
     }
 
@@ -46,11 +45,11 @@ public class Client : IDisposable
             throw new Exception("Can not connect to server when the client is allready connected or is currently connecting");
         IsConnecting = true;
 
-        _server = serverAdress;
+        _serverIP = serverAdress;
         TcpClient tcpClient = new TcpClient();
         try
         {
-            tcpClient.Connect(_server);
+            tcpClient.Connect(_serverIP);
         }
         catch (Exception)
         {
@@ -62,10 +61,10 @@ public class Client : IDisposable
         if (tcpClient.Connected)
         {
             // Send request
-            int port = NetworkHelper.GetFreePort(Consts.CLIENT_RECIVE_PORT);
+            int port = NetworkHelper.GetNextFreePort(Consts.CLIENT_UDP_RECIVE_PORT);
 
 
-            ConnectionRequest cR = new ConnectionRequest(_localAdress.Address, port, UserName);
+            ConnectionRequest cR = new ConnectionRequest(_localEndpoint, UserName);
 
             Packet requestData = Serializer.GetPacket(cR);
             var stream = tcpClient.GetStream();

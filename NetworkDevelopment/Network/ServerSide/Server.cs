@@ -1,6 +1,7 @@
 ﻿using System.Net.Sockets;
 using System.Net;
 using Network.Common;
+using UDP_Networker.ServerSide;
 
 namespace Network.ServerSide;
 
@@ -23,7 +24,9 @@ public class Server : IDisposable
     private Dictionary<uint, ClientHandle> _clients = new Dictionary<uint, ClientHandle>();
     private List<ClientHandle> _clientsDisconnected = new List<ClientHandle>();
     private int _clientPort = 5678; // Doing this and just adding one to the port for each client is a really bad ideer
-    private uint _clientIDCounter = 0;
+
+    // Starts at 1 since 0 is an invalid id
+    private uint _clientIDCounter = 1;
     private TcpListener _clientRequestListener = new TcpListener(IPAddress.Any, Consts.LISTENING_PORT);
     private CancellationToken cancellationToken = new CancellationToken();
     private IPEndPoint? _listenIPEndPoint = new IPEndPoint(IPAddress.Any, Consts.LISTENING_PORT);
@@ -31,7 +34,7 @@ public class Server : IDisposable
     public Server()
     {
         Logger.Log("Starting server up", LogWarningLevel.Info);
-        Logger.Log("Looking for clients on: " + GetIPEndPoint(), LogWarningLevel.Info);
+        Logger.Log("Looking for clients on: " + GetListeningIP(), LogWarningLevel.Info);
 
         _clientRequestListener.Start();
         Task.Run(ListenForClient);
@@ -97,7 +100,7 @@ public class Server : IDisposable
         {
             ConnectionRequest request = Serializer.GetObject<ConnectionRequest>(data);
 
-            clientIP = new IPEndPoint(request.IP, request.Port);
+            clientIP = request.UDPRecivePort;
             userName = request.Username;
 
             stream.Write(Consts.CONNECTION_ESTABLISHED);
@@ -110,7 +113,7 @@ public class Server : IDisposable
         {
             Logger.Log("Unable to connect to client do to error", LogWarningLevel.Warning);
             client.Dispose();
-            //throw;
+
             return false;
         }
     }
@@ -194,6 +197,11 @@ public class Server : IDisposable
         return _clients.Count;
     }
 
+    public void SendDataToAllClients<Data_Type>(Data_Type data, bool isSafe = true)
+    {
+        SendPacketToAllClients(Serializer.GetPacket(data).ChangeSafty(isSafe));
+    }
+
     public void SendPacketToAllClients(Packet packet)
     {
         var tempClients = _clients.Values;
@@ -206,16 +214,9 @@ public class Server : IDisposable
         }
     }
 
-    public void SendDataToAllClients<Data_Type>(Data_Type data, bool isSafe = true)
+    public bool SendDataToClient<Data_Type>(uint ID, Data_Type data, bool isSafe = true)
     {
-        var tempClients = _clients.Values;
-        foreach (ClientHandle clientHandle in tempClients)
-        {
-            if (!CheckClientConnection(clientHandle))
-                continue;
-
-            clientHandle.SendPacket(Serializer.GetPacket(data).ChangeSafty(isSafe));
-        }
+        return SendPacketToClient(ID, Serializer.GetPacket(data).ChangeSafty(isSafe));
     }
 
     public bool SendPacketToClient(uint ID, Packet packet)
@@ -225,17 +226,6 @@ public class Server : IDisposable
             return false;
 
         client.SendPacket(packet);
-
-        return true;
-    }
-
-    public bool SendDataToClient<Data_Type>(uint ID, Data_Type data, bool isSafe = true)
-    {
-        ClientHandle client = _clients[ID];
-        if (!CheckClientConnection(client))
-            return false;
-
-        client.SendPacket(Serializer.GetPacket(data).ChangeSafty(isSafe));
 
         return true;
     }
@@ -256,13 +246,11 @@ public class Server : IDisposable
 
         foreach (ClientHandle clientHandle in _clients.Values)
             clientHandle.Dispose();
-
-        Disposed = true;
     }
 
     // Util
 
-    public IPEndPoint GetIPEndPoint()
+    public IPEndPoint GetListeningIP()
     {
         IPEndPoint e = new IPEndPoint(NetworkHelper.GetLocalIPAddress(), Consts.LISTENING_PORT);
         return e;

@@ -10,17 +10,15 @@ namespace Network.Common;
 [Serializable]
 public unsafe struct ConnectionRequest
 {
-    public long IP;
-    public int Port;
+    public IPEndPoint UDPRecivePort;
     public string Username;
 
-    public ConnectionRequest(long ip, int port, string username)
+    public ConnectionRequest(IPEndPoint endPoint, string username)
     {
         if (!CheckIfValidUsername(username))
             throw new ArgumentException("Invalid username");
 
-        IP = ip;
-        Port = port;
+        UDPRecivePort = endPoint;
         Username = username;
     }
 
