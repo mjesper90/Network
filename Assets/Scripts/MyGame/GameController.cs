@@ -6,6 +6,7 @@ using NetworkLib.Common.DTOs;
 using NetworkLib.GameClient;
 using NetworkLib.GameServer;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace MyGame
 {
@@ -34,10 +35,13 @@ namespace MyGame
 
         public void Start()
         {
-            GameObject go = Instantiate(Resources.Load(CONSTANTS.PlayerPrefab), new Vector3(0, 0.5f, 0), Quaternion.identity) as GameObject;
-            GameObject go_client = Instantiate(Resources.Load(CONSTANTS.ClientPrefab), Vector3.zero, Quaternion.identity) as GameObject;
             GameObject go_server = Instantiate(Resources.Load(CONSTANTS.ServerPrefab), Vector3.zero, Quaternion.identity) as GameObject;
             _server = go_server.GetComponent<ServerInit>().Server;
+            if (_server != null)
+                return;
+
+            GameObject go = Instantiate(Resources.Load(CONSTANTS.PlayerPrefab), new Vector3(0, 0.5f, 0), Quaternion.identity) as GameObject;
+            GameObject go_client = Instantiate(Resources.Load(CONSTANTS.ClientPrefab), Vector3.zero, Quaternion.identity) as GameObject;
             _cam = Camera.main;
 
             //Add camera to player with offset
@@ -51,7 +55,10 @@ namespace MyGame
         public void Update()
         {
             if (_client == null)
-                _client = ClientInit.Instance.Client;
+                _client = ClientInit.Instance?.Client;
+            if (_client == null)
+                return;
+            CanvasController.Instance.OptionsButton.GetComponentInChildren<Text>().text = _client?.NetworkHandler.GetQueueSize().ToString();
             while (_client?.NetworkHandler.GetQueueSize() > 0)
             {
                 if (_client.NetworkHandler.TryDequeue(out Message msg))

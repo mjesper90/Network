@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Threading.Tasks;
 using NetworkLib.Common.DTOs;
 using NetworkLib.GameClient;
 using NetworkLib.GameServer;
@@ -8,7 +9,7 @@ public class NotQuakeMatch : Match
     protected ConcurrentDictionary<string, Message> _playerPositions = new ConcurrentDictionary<string, Message>();
     protected ConcurrentDictionary<string, Message> _playerRotations = new ConcurrentDictionary<string, Message>();
     protected ConcurrentDictionary<string, Message> _bullets = new ConcurrentDictionary<string, Message>();
-    
+
     public override Message[] GetState()
     {
         Message[] messages = new Message[_playerPositions.Count + _playerRotations.Count + _bullets.Count];
@@ -32,23 +33,27 @@ public class NotQuakeMatch : Match
         return messages;
     }
 
-    public override void UpdateState()
+    public override async Task UpdateState()
     {
-        foreach (Client client in Clients.Values)
+        await Task.Run(() =>
         {
-            if (client.NetworkHandler.Auth == null) //Player not logged in?
+            foreach (Client client in _clients.Values)
             {
-                Server.Log.LogWarning("NotQuakeMatch UpdateState: Player not logged in");
-                continue;
-            }
-            while (client.NetworkHandler.GetQueueSize() > 0)
-            {
-                if (client.NetworkHandler.TryDequeue(out Message msg))
+                if (client.NetworkHandler.Auth == null)
                 {
-                    HandleMessage(msg, client.NetworkHandler.Auth.Username);
+                    Server.Log.LogWarning("NotQuakeMatch UpdateState: Player not logged in");
+                    continue;
+                }
+
+                while (client.NetworkHandler.GetQueueSize() > 0)
+                {
+                    if (client.NetworkHandler.TryDequeue(out Message msg))
+                    {
+                        HandleMessage(msg, client.NetworkHandler.Auth.Username);
+                    }
                 }
             }
-        }
+        });
     }
 
     private void HandleMessage(Message msg, string username)

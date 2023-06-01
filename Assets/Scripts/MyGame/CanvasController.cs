@@ -45,6 +45,11 @@ public class CanvasController : MonoBehaviour
         ClientInit.Instance.SendLogin(username, "password");
     }
 
+    public void Options()
+    {
+
+    }
+
     public void Queue()
     {
         ClientInit.Instance.SendQueue();

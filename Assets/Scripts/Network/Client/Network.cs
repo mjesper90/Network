@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using NetworkLib.Common.DTOs;
 
 namespace NetworkLib.GameClient
@@ -36,6 +38,16 @@ namespace NetworkLib.GameClient
         public void ClearQueue()
         {
             _msgQueue = new ConcurrentQueue<Message>();
+        }
+
+        public List<Message> DequeueAll()
+        {
+            List<Message> messages = new List<Message>();
+            while (TryDequeue(out Message msg))
+            {
+                messages.Add(msg);
+            }
+            return messages;
         }
     }
 }

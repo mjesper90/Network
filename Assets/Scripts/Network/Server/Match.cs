@@ -1,88 +1,124 @@
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using NetworkLib.Common.Interfaces;
 using NetworkLib.Common.DTOs;
 using NetworkLib.GameClient;
+using System;
 
 namespace NetworkLib.GameServer
 {
     public class Match : IMatch
     {
-        protected ConcurrentDictionary<string, Client> Clients = new ConcurrentDictionary<string, Client>();
+        protected ConcurrentDictionary<string, Client> _clients { get; } = new ConcurrentDictionary<string, Client>();
+        protected ConcurrentDictionary<string, Message> _lastMessages = new ConcurrentDictionary<string, Message>();
 
-        public Match()
+        private CancellationTokenSource _tokenSource;
+        private Task _updateTask;
+
+        public Client[] GetClients()
         {
+            return _clients.Values.ToArray();
         }
 
-        public virtual Client[] GetClients()
+        public async Task AddPlayer(Client client)
         {
-            return Clients.Values.ToArray();
-        }
-
-        public virtual void AddPlayer(Client client)
-        {
-            Clients.TryAdd(client.NetworkHandler.Auth.Username, client);
+            _clients.TryAdd(client.NetworkHandler.Auth.Username, client);
 
             // Notify other clients in the match about the new player
-            foreach (Client c in Clients.Values)
-            {
-                if (c.NetworkHandler.Auth.Username != client.NetworkHandler.Auth.Username)
-                {
-                    _ = c.SendAsync(new Message(MessageType.PlayerJoined, c.Serialize(client.NetworkHandler.Auth.Username)));
-                }
-            }
+            IEnumerable<Task> tasks = _clients.Values
+                .Where(c => c.NetworkHandler.Auth.Username != client.NetworkHandler.Auth.Username)
+                .Select(c => c.SendAsync(new Message(MessageType.PlayerJoined, c.Serialize(client.NetworkHandler.Auth.Username))));
+
+            await Task.WhenAll(tasks);
         }
 
-        public virtual void RemovePlayer(Client client)
+        public async Task RemovePlayer(Client client)
         {
-            Clients.TryRemove(client.NetworkHandler.Auth.Username, out Client removedClient);
+            _clients.TryRemove(client.NetworkHandler.Auth.Username, out _);
 
             // Notify other clients in the match about the removed player
-            foreach (Client c in Clients.Values)
-            {
-                if (c.NetworkHandler.Auth.Username != client.NetworkHandler.Auth.Username)
-                {
-                    _ = c.SendAsync(new Message(MessageType.PlayerLeft, c.Serialize(client.NetworkHandler.Auth.Username)));
-                }
-            }
+            IEnumerable<Task> tasks = _clients.Values
+                .Where(c => c.NetworkHandler.Auth.Username != client.NetworkHandler.Auth.Username)
+                .Select(c => c.SendAsync(new Message(MessageType.PlayerLeft, c.Serialize(client.NetworkHandler.Auth.Username))));
+
+            await Task.WhenAll(tasks);
         }
 
         public virtual Message[] GetState()
         {
-            return new Message[] { };
+            return _lastMessages.Values.ToArray();
         }
 
-        public virtual void UpdateState()
+        public void StartUpdateLoop()
         {
-            foreach (Client client in Clients.Values)
+            _tokenSource = new CancellationTokenSource();
+            _updateTask = Task.Run(RunUpdateLoop);
+        }
+
+        public void StopUpdateLoop()
+        {
+            _tokenSource?.Cancel();
+            _updateTask?.Wait(); // Wait for the update loop to complete
+        }
+
+        public virtual async Task UpdateState()
+        {
+            await Task.Run(() =>
             {
-                if (client.NetworkHandler.Auth == null) //Player not logged in?
+                Parallel.ForEach(_clients.Values, c =>
                 {
-                    continue;
-                }
-                while (client.NetworkHandler.GetQueueSize() > 0)
-                {
-                    if (client.NetworkHandler.TryDequeue(out Message msg))
+                    if (c.NetworkHandler.Auth == null) //Player not logged in?
                     {
-                        switch (msg.MsgType)
-                        {
-                            case MessageType.Message:
-                                Server.Log.Log($"Match handling Message {msg.MsgType}");
-                                break;
-                            default:
-                                Server.Log.Log($"Unhandled message type {msg.MsgType}");
-                                break;
-                        }
+                        Server.Log.LogWarning("Match: Player not logged in");
+                        return;
                     }
-                }
+
+                    while (c.NetworkHandler.TryDequeue(out Message msg))
+                    {
+                        _ = ProcessMessage(msg, c);
+                    }
+                });
+            });
+        }
+
+        public async Task Broadcast(Message msg)
+        {
+            await Task.WhenAll(_clients.Values.Select(c => c.SendAsync(msg)));
+        }
+
+        public async Task Broadcast(Message[] msgs)
+        {
+            await Task.WhenAll(_clients.Values.Select(c => c.SendAsync(msgs)));
+        }
+
+        public async Task BroadcastExcept(Message msg, string username)
+        {
+            await Task.WhenAll(_clients.Values
+                .Where(c => c.NetworkHandler.Auth.Username != username)
+                .Select(c => c.SendAsync(msg)));
+        }
+
+        protected async Task RunUpdateLoop()
+        {
+            while (!_tokenSource.Token.IsCancellationRequested)
+            {
+                await UpdateState();
+                UpdateClients();
+                await Task.Delay((int)(CONSTANTS.ServerSpeed * 1000)); // Delay between iterations
             }
         }
 
-        public virtual void Broadcast(Message msg)
+        private async void UpdateClients()
         {
-            foreach (Client client in Clients.Values)
-            {
-                _ = client.SendAsync(msg);
-            }
+            await Broadcast(GetState());
+        }
+
+        protected async Task ProcessMessage(Message msg, Client client)
+        {
+            await BroadcastExcept(msg, client.NetworkHandler.Auth.Username);
         }
     }
 }

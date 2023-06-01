@@ -1,126 +1,181 @@
-using System.Collections.Generic;
+using System;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading.Tasks;
+using System.Collections.Concurrent;
 using NetworkLib.GameClient;
 using NetworkLib.Common.Logger;
 using NetworkLib.Common.DTOs;
-using System;
+using NetworkLib.Common.Interfaces;
 
 namespace NetworkLib.GameServer
 {
     public class Server
     {
-        public int Port { get; private set; }
-        public TcpListener TCPListener;
-        public List<Client> Clients = new List<Client>();
+        #region Fields
+        public int Port { get; }
+        protected readonly TcpListener _tcpListener;
+        protected readonly ConcurrentDictionary<Guid, Client> _clients = new ConcurrentDictionary<Guid, Client>();
+        protected bool _isRunning = false;
+        protected bool _isShuttingDown = false;
 
         // Matchmaking
-        public MatchMaking MatchMaking;
+        protected readonly MatchMaking _matchMaking;
 
         // Logger
         public static ILogNetwork Log;
-        private bool shuttingDown;
+        #endregion
 
+        #region Constructors
         public Server(ILogNetwork log, int port, IMatch match)
         {
             Port = port;
             Log = log;
-            MatchMaking = new MatchMaking(match);
-            TCPListener = new TcpListener(IPAddress.Any, Port);
-            TCPListener.Start();
-            AcceptClientsAsync();
+            _matchMaking = new MatchMaking(match);
+            _tcpListener = new TcpListener(IPAddress.Any, Port);
+            _tcpListener.Start();
+            Log.Log($"Server started on port {Port}");
         }
 
-        public Server(int port) : this(new DefaultLogger(), port, new Match()) {; }
+        public Server(int port) : this(new DefaultLogger(), port, new Match()) { }
+        #endregion
 
-        // Polling for message queues
-        public void UpdateServer()
-        {
-            MatchMaking.UpdateMatches();
-            CheckClientQueues();
-        }
+        #region Methods
 
         // Shutdown and clear
         public void Shutdown()
         {
-            if (shuttingDown)
+            if (_isShuttingDown)
             {
                 return; // Server is already shutting down
             }
 
             Log.Log("Server shutting down");
-            shuttingDown = true;
+            _isShuttingDown = true;
 
-            foreach (Client client in Clients)
+            foreach (Client client in _clients.Values)
             {
                 client.Disconnect();
             }
 
-            Clients.Clear();
-            TCPListener.Stop();
+            _tcpListener.Stop();
+            _clients.Clear();
         }
 
-
-        // Accept new connections asynchronously
-        private async void AcceptClientsAsync()
+        // Start accepting clients
+        public void StartAcceptingClients()
         {
-            while (!shuttingDown)
+            if (_isRunning)
             {
-                try
+                Log.LogWarning("Server is already running");
+                return; // Server is already running
+            }
+            Task.Run(async () =>
+            {
+                while (!_isShuttingDown)
                 {
-                    TcpClient tcp = await TCPListener.AcceptTcpClientAsync();
-                    Client client = new Client(Log, tcp);
-                    Clients.Add(client);
-                    Log.Log($"Client connected");
+                    try
+                    {
+                        TcpClient tcpClient = await _tcpListener.AcceptTcpClientAsync();
+                        _ = HandleClientAsync(tcpClient);
+                        Log.Log("Client connected");
+                    }
+                    catch (Exception e)
+                    {
+                        Log.LogWarning($"Exception: {e.Message}");
+                        break;
+                    }
+                    await Task.Delay(1);
                 }
-                catch (Exception e)
+            });
+            Task.Run(async () =>
+            {
+                while (!_isShuttingDown)
                 {
-                    Log.LogWarning($"Exception: {e.Message}");
-                    break;
+                    await CheckClientQueues();
+                    await Task.Delay((int)(1000 * CONSTANTS.ServerSpeed));
                 }
+            });
+
+            _isRunning = true;
+        }
+
+        // Handle connection
+        protected async Task HandleClientAsync(TcpClient tcpClient)
+        {
+            Client client = new Client(Log, tcpClient);
+
+            _clients.AddOrUpdate(client.Id, client, (key, oldClient) =>
+            {
+                oldClient.Disconnect();
+                return client;
+            });
+
+            Log.Log("Client connected");
+
+            await client.StartReceiving();
+
+            _clients.TryRemove(client.Id, out _);
+            Log.Log($"Client {client.NetworkHandler.Auth?.Username} disconnected");
+        }
+
+        protected async Task CheckClientQueues()
+        {
+            try
+            {
+                ConcurrentBag<Guid> disconnectedClientIds = new ConcurrentBag<Guid>();
+                foreach (var clientPair in _clients)
+                {
+                    Client client = clientPair.Value;
+
+                    if (client.IsConnected())
+                    {
+                        if (client.NetworkHandler.InGame)
+                        {
+                            continue;
+                        }
+
+                        int queueSize = client.NetworkHandler.GetQueueSize();
+                        Log.Log($"Client {client.NetworkHandler.Auth?.Username} has {queueSize} messages");
+
+                        foreach (Message msg in client.NetworkHandler.DequeueAll())
+                        {
+                            await ProcessMessage(client, msg);
+                        }
+                    }
+                    else
+                    {
+                        Log.Log($"Client {client.NetworkHandler.Auth?.Username} is disconnected");
+                        disconnectedClientIds.Add(client.Id);
+                    }
+                }
+
+                foreach (Guid clientId in disconnectedClientIds)
+                {
+                    _clients.TryRemove(clientId, out _);
+                }
+            }
+            catch (Exception e)
+            {
+                Log.LogWarning($"Exception: {e.Message}");
             }
         }
 
-        private void CheckClientQueues()
-        {
-            List<Client> disconnectedClients = new List<Client>();
-            foreach (Client client in Clients)
-            {
-                if (client.IsConnected())
-                {
-                    if (client.NetworkHandler.InGame)
-                    {
-                        continue;
-                    }
-                    //Log.Log($"Client {client.NetworkHandler.Auth?.Username} has {client.NetworkHandler.GetQueueSize()} messages");
-                    while (client.NetworkHandler.TryDequeue(out Message msg))
-                    {
-                        ProcessMessage(client, msg);
-                    }
-                }
-                else
-                {
-                    Log.Log($"Client {client.NetworkHandler.Auth?.Username} is disconnected");
-                    disconnectedClients.Add(client);
-                }
-            }
-            Clients.RemoveAll(disconnectedClients.Contains);
-        }
-
-        private void ProcessMessage(Client client, Message msg)
+        protected async Task ProcessMessage(Client client, Message msg)
         {
             if (msg.MsgType == MessageType.Login && client.NetworkHandler.Auth == null)
             {
                 client.NetworkHandler.Auth = client.Deserialize<Authentication>(msg.Data);
                 Log.Log($"User {client.NetworkHandler.Auth.Username} logged in");
-                client.Send(new Message(MessageType.LoginResponse));
+                _ = client.SendAsync(new Message(MessageType.LoginResponse));
             }
             if (msg.MsgType == MessageType.JoinQueue && client.NetworkHandler.Auth != null)
             {
                 client.NetworkHandler.InQueue = true;
                 Log.Log($"User {client.NetworkHandler.Auth.Username} joined queue");
-                MatchMaking.Join(client);
+                _ = _matchMaking.Join(client);
             }
         }
+        #endregion
     }
 }

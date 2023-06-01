@@ -7,7 +7,7 @@ using System.Net.Sockets;
 using System.Threading;
 using NetworkLib.Common.Logger;
 using NetworkLib.Common.DTOs;
-
+/*
 public class NetworkTesting
 {
     private Server _server;
@@ -194,3 +194,4 @@ public class NetworkTesting
         return null;
     }
 }
+*/

@@ -1,35 +1,27 @@
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using NetworkLib.Common.DTOs;
+using NetworkLib.Common.Interfaces;
 using NetworkLib.GameClient;
 
 namespace NetworkLib.GameServer
 {
-    public class MatchMaking
+    public class MatchMaking : IMatchMaking
     {
-        public List<IMatch> Matches;
+        public ICollection<IMatch> Matches;
 
         public MatchMaking(IMatch match)
         {
             Matches = new List<IMatch>() { match };
+            match.StartUpdateLoop();
         }
-
-        public void UpdateMatches()
+        public virtual async Task Join(Client client)
         {
-            foreach (Match match in Matches)
-            {
-                match.UpdateState();
-                Message[] messages = match.GetState();
-                foreach (Client client in match.GetClients())
-                {
-                    _ = client.SendAsync(messages);
-                }
-            }
-        }
-
-        public void Join(Client client)
-        {
-            Matches[0].AddPlayer(client);
-            client.Send(new Message(MessageType.MatchJoined));
+            IMatch match = Matches.First(); // Assuming only one match is available
+            _ = match.AddPlayer(client);
+            client.SetMatch(match);
+            await client.SendAsync(new Message(MessageType.MatchJoined));
             Server.Log.Log($"User {client.NetworkHandler.Auth.Username} joined match");
             client.NetworkHandler.InGame = true;
             client.NetworkHandler.InQueue = false;
