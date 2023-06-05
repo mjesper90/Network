@@ -5,6 +5,6 @@ namespace NetworkLib.Common.Interfaces
 {
     public interface IMatchMaking
     {
-        Task Join(Client client);
+        void Join(Client client);
     }
 }

@@ -78,14 +78,14 @@ namespace MyGame
                     CanvasController.Instance.LoginButton.interactable = false;
                     break;
                 case MessageType.Message:
-                    Debug.Log("Message " + _client.Deserialize<string>(msg.Data));
+                    Debug.Log("Message " + _client.MsgFactory.Deserialize<string>(msg.Data));
                     break;
                 case MessageType.User:
-                    User user = _client.Deserialize<User>(msg.Data);
+                    User user = _client.MsgFactory.Deserialize<User>(msg.Data);
                     UserReceived(user);
                     break;
                 case MessageType.PlayerPosition:
-                    PlayerPosition player = _client.Deserialize<PlayerPosition>(msg.Data);
+                    PlayerPosition player = _client.MsgFactory.Deserialize<PlayerPosition>(msg.Data);
                     PlayerPositionReceived(player);
                     break;
                 case MessageType.MatchJoined:
@@ -93,11 +93,11 @@ namespace MyGame
                     LocalPlayer.InGame = true;
                     break;
                 case MessageType.PlayerRotation:
-                    PlayerRotation playerRotation = _client.Deserialize<PlayerRotation>(msg.Data);
+                    PlayerRotation playerRotation = _client.MsgFactory.Deserialize<PlayerRotation>(msg.Data);
                     PlayerRotationReceived(playerRotation);
                     break;
                 default:
-                    Debug.Log("Unknown message type");
+                    Debug.LogWarning("Unknown message type " + msg.MsgType);
                     break;
             }
         }

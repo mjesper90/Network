@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -10,21 +12,55 @@ namespace NetworkLib.GameServer
     public class MatchMaking : IMatchMaking
     {
         public ICollection<IMatch> Matches;
+        public ConcurrentQueue<Client> Queue = new ConcurrentQueue<Client>();
+
+        private bool _matchGoing = false;
+        private int _matchMinPlayers = 1;
 
         public MatchMaking(IMatch match)
         {
             Matches = new List<IMatch>() { match };
             match.StartUpdateLoop();
+            StartQueueLoop();
         }
-        public virtual async Task Join(Client client)
+
+        public virtual void Join(Client client)
         {
-            IMatch match = Matches.First(); // Assuming only one match is available
-            _ = match.AddPlayer(client);
-            client.SetMatch(match);
-            await client.SendAsync(new Message(MessageType.MatchJoined));
-            Server.Log.Log($"User {client.NetworkHandler.Auth.Username} joined match");
-            client.NetworkHandler.InGame = true;
-            client.NetworkHandler.InQueue = false;
+            Queue.Enqueue(client);
+            client.NetworkHandler.InQueue = true;
+            _ = client.SendAsync(new Message(MessageType.QueueJoined));
+        }
+
+        public void Shutdown()
+        {
+            foreach (IMatch match in Matches)
+            {
+                match.Shutdown();
+            }
+        }
+
+        private void StartQueueLoop()
+        {
+            Task.Run(async () =>
+            {
+                while (true)
+                {
+                    if (Queue.Count >= _matchMinPlayers && !_matchGoing)
+                    {
+                        _matchGoing = true;
+                        Server.Log.Log("Match going");
+                    }
+                    if (Queue.Count > 0 && _matchGoing)
+                    {
+                        Client client = null;
+                        Queue.TryDequeue(out client);
+                        _ = Matches.First().AddPlayer(client);
+                        client.NetworkHandler.InQueue = false;
+                        client.NetworkHandler.InGame = true;
+                    }
+                    await Task.Delay((int)(1000 * CONSTANTS.ServerSpeed));
+                }
+            });
         }
     }
 }

@@ -4,6 +4,7 @@ using UnityEngine.UI;
 using MyGame.NetworkSetup;
 using MyGame;
 using MyGame.DTOs;
+using NetworkLib.Common.DTOs;
 
 public class CanvasController : MonoBehaviour
 {
@@ -47,7 +48,7 @@ public class CanvasController : MonoBehaviour
 
     public void Options()
     {
-
+        ClientInit.Instance.Send(MessageType.Message, "Hello from client");
     }
 
     public void Queue()

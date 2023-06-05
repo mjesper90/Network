@@ -7,8 +7,8 @@ namespace NetworkLib.GameClient
 {
     public class Network
     {
-        public Client Client;
         public Authentication Auth = null;
+        public Client Client;
         public bool InGame = false;
         public bool InQueue = false;
 
@@ -17,22 +17,6 @@ namespace NetworkLib.GameClient
         public Network(Client client)
         {
             Client = client;
-        }
-
-        public void Enqueue(Message msg)
-        {
-            _msgQueue.Enqueue(msg);
-        }
-
-        public bool TryDequeue(out Message msg)
-        {
-            _msgQueue.TryDequeue(out msg);
-            return msg != null;
-        }
-
-        public int GetQueueSize()
-        {
-            return _msgQueue.Count;
         }
 
         public void ClearQueue()
@@ -48,6 +32,22 @@ namespace NetworkLib.GameClient
                 messages.Add(msg);
             }
             return messages;
+        }
+
+        public void Enqueue(Message msg)
+        {
+            _msgQueue.Enqueue(msg);
+        }
+
+        public int GetQueueSize()
+        {
+            return _msgQueue.Count;
+        }
+
+        public bool TryDequeue(out Message msg)
+        {
+            _msgQueue.TryDequeue(out msg);
+            return msg != null;
         }
     }
 }

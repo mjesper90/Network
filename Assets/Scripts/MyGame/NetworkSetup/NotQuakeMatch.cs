@@ -6,9 +6,9 @@ using NetworkLib.GameServer;
 
 public class NotQuakeMatch : Match
 {
+    protected ConcurrentDictionary<string, Message> _bullets = new ConcurrentDictionary<string, Message>();
     protected ConcurrentDictionary<string, Message> _playerPositions = new ConcurrentDictionary<string, Message>();
     protected ConcurrentDictionary<string, Message> _playerRotations = new ConcurrentDictionary<string, Message>();
-    protected ConcurrentDictionary<string, Message> _bullets = new ConcurrentDictionary<string, Message>();
 
     public override Message[] GetState()
     {
@@ -33,31 +33,10 @@ public class NotQuakeMatch : Match
         return messages;
     }
 
-    public override async Task UpdateState()
+    protected override async Task ProcessMessage(Message msg, Client client)
     {
-        await Task.Run(() =>
-        {
-            foreach (Client client in _clients.Values)
-            {
-                if (client.NetworkHandler.Auth == null)
-                {
-                    Server.Log.LogWarning("NotQuakeMatch UpdateState: Player not logged in");
-                    continue;
-                }
-
-                while (client.NetworkHandler.GetQueueSize() > 0)
-                {
-                    if (client.NetworkHandler.TryDequeue(out Message msg))
-                    {
-                        HandleMessage(msg, client.NetworkHandler.Auth.Username);
-                    }
-                }
-            }
-        });
-    }
-
-    private void HandleMessage(Message msg, string username)
-    {
+        Server.Log.Log($"NotQuakeMatch processing message type {msg.MsgType}");
+        string username = client.NetworkHandler.Auth.Username;
         switch (msg.MsgType)
         {
             case MessageType.PlayerPosition:
@@ -72,9 +51,13 @@ public class NotQuakeMatch : Match
                 _bullets[msg.Id] = msg;
                 Server.Log.Log("NotQuakeMatch handling Bullet " + msg.Id);
                 break;
+            case MessageType.Message:
+                Server.Log.Log("NotQuakeMatch handling Message " + msg.Id);
+                break;
             default:
                 Server.Log.Log($"NotQuakeMatch Unhandled message type {msg.MsgType}");
                 break;
         }
     }
+
 }

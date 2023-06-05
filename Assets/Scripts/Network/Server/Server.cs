@@ -4,9 +4,12 @@ using System.Net.Sockets;
 using System.Threading.Tasks;
 using System.Collections.Concurrent;
 using NetworkLib.GameClient;
+using NetworkLib.Common;
 using NetworkLib.Common.Logger;
 using NetworkLib.Common.DTOs;
 using NetworkLib.Common.Interfaces;
+using System.Linq;
+using System.Runtime.Serialization.Formatters.Binary;
 
 namespace NetworkLib.GameServer
 {
@@ -20,7 +23,10 @@ namespace NetworkLib.GameServer
         protected bool _isShuttingDown = false;
 
         // Matchmaking
-        protected readonly MatchMaking _matchMaking;
+        protected readonly MatchMaking _mm;
+
+        // Message Factory
+        protected readonly MessageFactory _mf;
 
         // Logger
         public static ILogNetwork Log;
@@ -31,7 +37,8 @@ namespace NetworkLib.GameServer
         {
             Port = port;
             Log = log;
-            _matchMaking = new MatchMaking(match);
+            _mf = new MessageFactory(log, new BinaryFormatter());
+            _mm = new MatchMaking(match);
             _tcpListener = new TcpListener(IPAddress.Any, Port);
             _tcpListener.Start();
             Log.Log($"Server started on port {Port}");
@@ -41,6 +48,11 @@ namespace NetworkLib.GameServer
         #endregion
 
         #region Methods
+
+        public Client[] GetClients()
+        {
+            return _clients.Values.ToArray();
+        }
 
         // Shutdown and clear
         public void Shutdown()
@@ -52,6 +64,7 @@ namespace NetworkLib.GameServer
 
             Log.Log("Server shutting down");
             _isShuttingDown = true;
+            _mm.Shutdown();
 
             foreach (Client client in _clients.Values)
             {
@@ -78,14 +91,13 @@ namespace NetworkLib.GameServer
                     {
                         TcpClient tcpClient = await _tcpListener.AcceptTcpClientAsync();
                         _ = HandleClientAsync(tcpClient);
-                        Log.Log("Client connected");
                     }
                     catch (Exception e)
                     {
                         Log.LogWarning($"Exception: {e.Message}");
                         break;
                     }
-                    await Task.Delay(1);
+                    await Task.Delay(1); // Prevents CPU from going to 100%
                 }
             });
             Task.Run(async () =>
@@ -103,7 +115,7 @@ namespace NetworkLib.GameServer
         // Handle connection
         protected async Task HandleClientAsync(TcpClient tcpClient)
         {
-            Client client = new Client(Log, tcpClient);
+            Client client = new Client(Log, tcpClient, _mf);
 
             _clients.AddOrUpdate(client.Id, client, (key, oldClient) =>
             {
@@ -130,7 +142,7 @@ namespace NetworkLib.GameServer
 
                     if (client.IsConnected())
                     {
-                        if (client.NetworkHandler.InGame)
+                        if (client.NetworkHandler.InGame) //Match is handling queue in game
                         {
                             continue;
                         }
@@ -165,15 +177,19 @@ namespace NetworkLib.GameServer
         {
             if (msg.MsgType == MessageType.Login && client.NetworkHandler.Auth == null)
             {
-                client.NetworkHandler.Auth = client.Deserialize<Authentication>(msg.Data);
+                client.NetworkHandler.Auth = client.MsgFactory.Deserialize<Authentication>(msg.Data);
                 Log.Log($"User {client.NetworkHandler.Auth.Username} logged in");
                 _ = client.SendAsync(new Message(MessageType.LoginResponse));
             }
-            if (msg.MsgType == MessageType.JoinQueue && client.NetworkHandler.Auth != null)
+            else if (msg.MsgType == MessageType.JoinQueue && client.NetworkHandler.Auth != null)
             {
                 client.NetworkHandler.InQueue = true;
                 Log.Log($"User {client.NetworkHandler.Auth.Username} joined queue");
-                _ = _matchMaking.Join(client);
+                _mm.Join(client);
+            }
+            else
+            {
+                Log.LogWarning($"Unknown message type {msg.MsgType}");
             }
         }
         #endregion

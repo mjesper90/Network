@@ -1,38 +1,63 @@
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using NetworkLib.Common.Interfaces;
 using NetworkLib.Common.DTOs;
+using NetworkLib.Common.Interfaces;
 using NetworkLib.GameClient;
-using System;
 
 namespace NetworkLib.GameServer
 {
     public class Match : IMatch
     {
-        protected ConcurrentDictionary<string, Client> _clients { get; } = new ConcurrentDictionary<string, Client>();
+        protected ConcurrentDictionary<string, Client> _clients = new ConcurrentDictionary<string, Client>();
         protected ConcurrentDictionary<string, Message> _lastMessages = new ConcurrentDictionary<string, Message>();
 
         private CancellationTokenSource _tokenSource;
         private Task _updateTask;
+
+        public async Task AddPlayer(Client client)
+        {
+            _clients.TryAdd(client.NetworkHandler.Auth.Username, client);
+            Server.Log.Log("Match: Added player " + client.NetworkHandler.Auth.Username);
+
+            // Notify other clients in the match about the new player
+            IEnumerable<Task> tasks = _clients.Values
+                .Where(c => c.NetworkHandler.Auth.Username != client.NetworkHandler.Auth.Username)
+                .Select(c => c.SendAsync(c.MsgFactory.CreateMessage(MessageType.PlayerJoined, client.NetworkHandler.Auth.Username)));
+            //.Select(c => c.SendAsync(new Message(MessageType.PlayerJoined, c.MsgFactory.Serialize(client.NetworkHandler.Auth.Username))));
+
+            _ = Task.WhenAll(tasks);
+            await client.SendAsync(new Message(MessageType.MatchJoined));
+        }
+
+        public async Task Broadcast(Message msg)
+        {
+            await Task.WhenAll(_clients.Values.Select(c => c.SendAsync(msg)));
+        }
+
+        public async Task Broadcast(Message[] msgs)
+        {
+            await Task.WhenAll(_clients.Values.Select(c => c.SendAsync(msgs)));
+        }
+
+        public async Task BroadcastExcept(Message msg, string username)
+        {
+            await Task.WhenAll(_clients.Values
+                .Where(c => c.NetworkHandler.Auth.Username != username)
+                .Select(c => c.SendAsync(msg)));
+        }
 
         public Client[] GetClients()
         {
             return _clients.Values.ToArray();
         }
 
-        public async Task AddPlayer(Client client)
+        public virtual Message[] GetState()
         {
-            _clients.TryAdd(client.NetworkHandler.Auth.Username, client);
-
-            // Notify other clients in the match about the new player
-            IEnumerable<Task> tasks = _clients.Values
-                .Where(c => c.NetworkHandler.Auth.Username != client.NetworkHandler.Auth.Username)
-                .Select(c => c.SendAsync(new Message(MessageType.PlayerJoined, c.Serialize(client.NetworkHandler.Auth.Username))));
-
-            await Task.WhenAll(tasks);
+            return _lastMessages.Values.ToArray();
         }
 
         public async Task RemovePlayer(Client client)
@@ -42,14 +67,14 @@ namespace NetworkLib.GameServer
             // Notify other clients in the match about the removed player
             IEnumerable<Task> tasks = _clients.Values
                 .Where(c => c.NetworkHandler.Auth.Username != client.NetworkHandler.Auth.Username)
-                .Select(c => c.SendAsync(new Message(MessageType.PlayerLeft, c.Serialize(client.NetworkHandler.Auth.Username))));
+                .Select(c => c.SendAsync(c.MsgFactory.CreateMessage(MessageType.PlayerLeft, client.NetworkHandler.Auth.Username)));
 
             await Task.WhenAll(tasks);
         }
 
-        public virtual Message[] GetState()
+        public void Shutdown()
         {
-            return _lastMessages.Values.ToArray();
+            StopUpdateLoop();
         }
 
         public void StartUpdateLoop()
@@ -84,21 +109,9 @@ namespace NetworkLib.GameServer
             });
         }
 
-        public async Task Broadcast(Message msg)
+        protected virtual async Task ProcessMessage(Message msg, Client client)
         {
-            await Task.WhenAll(_clients.Values.Select(c => c.SendAsync(msg)));
-        }
-
-        public async Task Broadcast(Message[] msgs)
-        {
-            await Task.WhenAll(_clients.Values.Select(c => c.SendAsync(msgs)));
-        }
-
-        public async Task BroadcastExcept(Message msg, string username)
-        {
-            await Task.WhenAll(_clients.Values
-                .Where(c => c.NetworkHandler.Auth.Username != username)
-                .Select(c => c.SendAsync(msg)));
+            await BroadcastExcept(msg, client.NetworkHandler.Auth.Username);
         }
 
         protected async Task RunUpdateLoop()
@@ -113,12 +126,10 @@ namespace NetworkLib.GameServer
 
         private async void UpdateClients()
         {
-            await Broadcast(GetState());
-        }
-
-        protected async Task ProcessMessage(Message msg, Client client)
-        {
-            await BroadcastExcept(msg, client.NetworkHandler.Auth.Username);
+            Message[] msgs = GetState();
+            if (msgs.Length == 0 || _clients.Count == 0)
+                return;
+            await Broadcast(msgs);
         }
     }
 }

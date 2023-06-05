@@ -4,6 +4,7 @@ using System.Net.Sockets;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading;
 using System.Threading.Tasks;
+using NetworkLib.Common;
 using NetworkLib.Common.DTOs;
 using NetworkLib.Common.Interfaces;
 using NetworkLib.Common.Logger;
@@ -12,35 +13,38 @@ namespace NetworkLib.GameClient
 {
     public class Client
     {
-        public Guid Id;
-        public TcpClient Tcp;
-        public Network NetworkHandler;
-
-        private NetworkStream _tcpStream;
-        private SemaphoreSlim _semaphore = new SemaphoreSlim(1);
-
-        private BinaryFormatter _binaryFormatter;
-        private IMatch _match;
-
         // Logger
         public static ILogNetwork Log;
+        public Guid Id;
+        public Network NetworkHandler;
+        public TcpClient Tcp;
 
-        public Client(ILogNetwork log, TcpClient socket)
+        private IMatch _match;
+        private SemaphoreSlim _semaphore = new SemaphoreSlim(1);
+
+        private NetworkStream _tcpStream;
+
+        // Message Factory
+        public readonly MessageFactory MsgFactory;
+
+        public Client(ILogNetwork log, TcpClient socket, MessageFactory mf)
         {
             Id = Guid.NewGuid();
-            _binaryFormatter = new BinaryFormatter();
             NetworkHandler = new Network(this);
             Tcp = socket;
             Log = log;
             Tcp.ReceiveBufferSize = CONSTANTS.BufferSize;
             Tcp.SendBufferSize = CONSTANTS.BufferSize;
             _tcpStream = Tcp.GetStream();
+            MsgFactory = mf;
         }
 
-        public void SetMatch(IMatch match)
+        public void Disconnect()
         {
-            _match = match;
-            Log.Log($"Client {Id} joined a match");
+            Log.Log("Client disconnected");
+            Tcp?.Close();
+            Tcp = null;
+            _tcpStream = null;
         }
 
         public bool IsConnected()
@@ -48,12 +52,30 @@ namespace NetworkLib.GameClient
             return Tcp?.Connected == true;
         }
 
-        public void Disconnect()
+        public void Send(object obj)
         {
-            Log.LogWarning("Client disconnected");
-            Tcp?.Close();
-            Tcp = null;
-            _tcpStream = null;
+            byte[] bytes = MsgFactory.Serialize(obj);
+            Send(bytes);
+        }
+
+        public void Send(Message msg)
+        {
+            byte[] bytes = MsgFactory.Serialize(msg);
+            Send(bytes);
+        }
+
+        public void Send(byte[] bytes)
+        {
+            try
+            {
+                _tcpStream.Write(bytes, 0, bytes.Length);
+                _tcpStream.Flush();
+            }
+            catch (Exception ex)
+            {
+                // Handle the exception appropriately, e.g., log the error, retry, or notify the caller
+                Log.LogWarning($"Error sending data: {ex.Message}");
+            }
         }
 
         public async Task SendAsync(byte[] bytes, CancellationToken cancellationToken = default)
@@ -85,7 +107,7 @@ namespace NetworkLib.GameClient
         {
             if (_tcpStream.CanWrite)
             {
-                byte[] bytes = Serialize(obj);
+                byte[] bytes = MsgFactory.Serialize(obj);
                 await SendAsync(bytes, cancellationToken);
             }
         }
@@ -94,70 +116,15 @@ namespace NetworkLib.GameClient
         {
             if (_tcpStream.CanWrite)
             {
-                byte[] bytes = Serialize(msg);
+                byte[] bytes = MsgFactory.Serialize(msg);
                 await SendAsync(bytes, cancellationToken);
             }
         }
 
-        public void Send(object obj)
+        public void SetMatch(IMatch match)
         {
-            byte[] bytes = Serialize(obj);
-            Send(bytes);
-        }
-
-        public void Send(byte[] bytes)
-        {
-            try
-            {
-                _tcpStream.Write(bytes, 0, bytes.Length);
-                _tcpStream.Flush();
-            }
-            catch (Exception ex)
-            {
-                // Handle the exception appropriately, e.g., log the error, retry, or notify the caller
-                Log.LogWarning($"Error sending data: {ex.Message}");
-            }
-        }
-
-        public byte[] Serialize(object obj)
-        {
-            try
-            {
-                using (MemoryStream ms = new MemoryStream())
-                {
-                    _binaryFormatter.Serialize(ms, obj);
-                    return ms.ToArray();
-                }
-            }
-            catch (Exception ex)
-            {
-                // Handle the exception appropriately, e.g., log the error or throw a custom exception
-                Log.LogWarning($"Error serializing object: {ex.Message}");
-                throw;
-            }
-        }
-
-        public T Deserialize<T>(byte[] data)
-        {
-            try
-            {
-                // Create a new byte array to hold a copy of the data
-                byte[] dataCopy = new byte[data.Length];
-                Array.Copy(data, dataCopy, data.Length);
-
-                // Deserialize the copied data
-                using (MemoryStream memoryStream = new MemoryStream(dataCopy))
-                {
-                    return (T)_binaryFormatter.Deserialize(memoryStream);
-                }
-            }
-            catch (Exception e)
-            {
-                // Log the error and the corrupted data
-                Log.LogWarning($"Error deserializing data: {e}");
-                Log.LogWarning($"Corrupted data: {BitConverter.ToString(data)}");
-                throw;
-            }
+            _match = match;
+            Log.Log($"Client {Id} joined a match");
         }
 
         public async Task StartReceiving()
@@ -177,7 +144,7 @@ namespace NetworkLib.GameClient
                         {
                             try
                             {
-                                object msg = Deserialize<object>(data);
+                                object msg = MsgFactory.Deserialize<object>(data);
                                 ProcessMessage(msg);
                             }
                             catch (Exception e)
@@ -218,6 +185,7 @@ namespace NetworkLib.GameClient
         {
             if (obj is Message message)
             {
+                Log.Log($"Received message: {message.MsgType}");
                 NetworkHandler.Enqueue(message);
             }
             else if (obj is Message[] messages)
