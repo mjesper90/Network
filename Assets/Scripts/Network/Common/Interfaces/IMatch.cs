@@ -8,6 +8,7 @@ namespace NetworkLib.Common.Interfaces
     {
         Task AddPlayer(Client client);
         Task Broadcast(Message msg);
+        Task Broadcast(Message[] msgs);
         Task BroadcastExcept(Message msg, string username);
         Client[] GetClients();
         Message[] GetState();
@@ -15,6 +16,5 @@ namespace NetworkLib.Common.Interfaces
         void Shutdown();
         void StartUpdateLoop();
         void StopUpdateLoop();
-        Task UpdateState();
     }
 }

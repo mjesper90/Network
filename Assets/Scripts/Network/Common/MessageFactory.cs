@@ -8,8 +8,8 @@ namespace NetworkLib.Common
 {
     public class MessageFactory
     {
-        private BinaryFormatter _binaryFormatter;
-        private ILogNetwork _log;
+        protected readonly BinaryFormatter _binaryFormatter;
+        protected readonly ILogNetwork _log;
 
         public MessageFactory(ILogNetwork log, BinaryFormatter binaryFormatter)
         {

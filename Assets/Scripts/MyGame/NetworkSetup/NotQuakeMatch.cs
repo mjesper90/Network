@@ -35,7 +35,7 @@ public class NotQuakeMatch : Match
 
     protected override async Task ProcessMessage(Message msg, Client client)
     {
-        Server.Log.Log($"NotQuakeMatch processing message type {msg.MsgType}");
+        //Server.Log.Log($"NotQuakeMatch processing message type {msg.MsgType}");
         string username = client.NetworkHandler.Auth.Username;
         switch (msg.MsgType)
         {

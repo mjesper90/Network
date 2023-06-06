@@ -14,9 +14,8 @@ namespace NetworkLib.GameServer
     {
         protected ConcurrentDictionary<string, Client> _clients = new ConcurrentDictionary<string, Client>();
         protected ConcurrentDictionary<string, Message> _lastMessages = new ConcurrentDictionary<string, Message>();
-
-        private CancellationTokenSource _tokenSource;
-        private Task _updateTask;
+        protected CancellationTokenSource _tokenSource;
+        protected Task _updateTask;
 
         public async Task AddPlayer(Client client)
         {
@@ -27,7 +26,6 @@ namespace NetworkLib.GameServer
             IEnumerable<Task> tasks = _clients.Values
                 .Where(c => c.NetworkHandler.Auth.Username != client.NetworkHandler.Auth.Username)
                 .Select(c => c.SendAsync(c.MsgFactory.CreateMessage(MessageType.PlayerJoined, client.NetworkHandler.Auth.Username)));
-            //.Select(c => c.SendAsync(new Message(MessageType.PlayerJoined, c.MsgFactory.Serialize(client.NetworkHandler.Auth.Username))));
 
             _ = Task.WhenAll(tasks);
             await client.SendAsync(new Message(MessageType.MatchJoined));
@@ -89,7 +87,30 @@ namespace NetworkLib.GameServer
             _updateTask?.Wait(); // Wait for the update loop to complete
         }
 
-        public virtual async Task UpdateState()
+        protected virtual async Task ProcessMessage(Message msg, Client client)
+        {
+            await BroadcastExcept(msg, client.NetworkHandler.Auth.Username);
+        }
+
+        protected async Task RunUpdateLoop()
+        {
+            while (!_tokenSource.Token.IsCancellationRequested)
+            {
+                await UpdateState();
+                UpdateClients();
+                await Task.Delay((int)(CONSTANTS.ServerSpeed * 1000)); // Delay between iterations
+            }
+        }
+
+        protected async void UpdateClients()
+        {
+            Message[] msgs = GetState();
+            if (msgs.Length == 0 || _clients.Count == 0)
+                return;
+            await Broadcast(msgs);
+        }
+
+        protected virtual async Task UpdateState()
         {
             await Task.Run(() =>
             {
@@ -107,29 +128,6 @@ namespace NetworkLib.GameServer
                     }
                 });
             });
-        }
-
-        protected virtual async Task ProcessMessage(Message msg, Client client)
-        {
-            await BroadcastExcept(msg, client.NetworkHandler.Auth.Username);
-        }
-
-        protected async Task RunUpdateLoop()
-        {
-            while (!_tokenSource.Token.IsCancellationRequested)
-            {
-                await UpdateState();
-                UpdateClients();
-                await Task.Delay((int)(CONSTANTS.ServerSpeed * 1000)); // Delay between iterations
-            }
-        }
-
-        private async void UpdateClients()
-        {
-            Message[] msgs = GetState();
-            if (msgs.Length == 0 || _clients.Count == 0)
-                return;
-            await Broadcast(msgs);
         }
     }
 }

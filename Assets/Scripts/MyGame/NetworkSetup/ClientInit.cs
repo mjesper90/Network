@@ -67,11 +67,11 @@ namespace MyGame.NetworkSetup
             while (true)
             {
                 yield return new WaitForSeconds(CONSTANTS.ServerSpeed / 2);
-                SendPlayerPosition();
+                SendPlayerPositionAndRotation();
             }
         }
 
-        private void SendPlayerPosition()
+        private void SendPlayerPositionAndRotation()
         {
             if (Client?.IsConnected() == true && GameController.Instance.LocalPlayer?.InGame == true)
             {
@@ -80,8 +80,8 @@ namespace MyGame.NetworkSetup
                     Player p = GameController.Instance.LocalPlayer;
                     Vector3 pos = p.transform.position;
                     Client.Log.LogWarning("Sending player position: " + pos);
-                    PlayerPosition player = new PlayerPosition(p.GetUser().Username, pos.x, pos.y, pos.z);
-                    _ = Client.SendAsync(new Message(MessageType.PlayerPosition, Client.MsgFactory.Serialize(player)));
+                    PlayerPosition playerPos = new PlayerPosition(p.GetUser().Username, pos.x, pos.y, pos.z);
+                    _ = Client.SendAsync(new Message(MessageType.PlayerPosition, Client.MsgFactory.Serialize(playerPos)));
                     _ = Client.SendAsync(new Message(MessageType.PlayerRotation, Client.MsgFactory.Serialize(new PlayerRotation(p.GetUser().Username, p.transform.rotation.eulerAngles.y))));
                 }
                 catch (Exception e)
