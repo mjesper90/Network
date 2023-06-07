@@ -6,6 +6,7 @@ using NetworkLib.Common.DTOs;
 using NetworkLib.GameClient;
 using NetworkLib.GameServer;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace MyGame
 {
@@ -34,10 +35,13 @@ namespace MyGame
 
         public void Start()
         {
-            GameObject go = Instantiate(Resources.Load(CONSTANTS.PlayerPrefab), new Vector3(0, 0.5f, 0), Quaternion.identity) as GameObject;
-            GameObject go_client = Instantiate(Resources.Load(CONSTANTS.ClientPrefab), Vector3.zero, Quaternion.identity) as GameObject;
             GameObject go_server = Instantiate(Resources.Load(CONSTANTS.ServerPrefab), Vector3.zero, Quaternion.identity) as GameObject;
             _server = go_server.GetComponent<ServerInit>().Server;
+            if (_server != null)
+                return;
+
+            GameObject go = Instantiate(Resources.Load(CONSTANTS.PlayerPrefab), new Vector3(0, 0.5f, 0), Quaternion.identity) as GameObject;
+            GameObject go_client = Instantiate(Resources.Load(CONSTANTS.ClientPrefab), Vector3.zero, Quaternion.identity) as GameObject;
             _cam = Camera.main;
 
             //Add camera to player with offset
@@ -51,7 +55,10 @@ namespace MyGame
         public void Update()
         {
             if (_client == null)
-                _client = ClientInit.Instance.Client;
+                _client = ClientInit.Instance?.Client;
+            if (_client == null)
+                return;
+            CanvasController.Instance.OptionsButton.GetComponentInChildren<Text>().text = _client?.NetworkHandler.GetQueueSize().ToString();
             while (_client?.NetworkHandler.GetQueueSize() > 0)
             {
                 if (_client.NetworkHandler.TryDequeue(out Message msg))
@@ -71,14 +78,14 @@ namespace MyGame
                     CanvasController.Instance.LoginButton.interactable = false;
                     break;
                 case MessageType.Message:
-                    Debug.Log("Message " + _client.Deserialize<string>(msg.Data));
+                    Debug.Log("Message " + _client.MsgFactory.Deserialize<string>(msg.Data));
                     break;
                 case MessageType.User:
-                    User user = _client.Deserialize<User>(msg.Data);
+                    User user = _client.MsgFactory.Deserialize<User>(msg.Data);
                     UserReceived(user);
                     break;
                 case MessageType.PlayerPosition:
-                    PlayerPosition player = _client.Deserialize<PlayerPosition>(msg.Data);
+                    PlayerPosition player = _client.MsgFactory.Deserialize<PlayerPosition>(msg.Data);
                     PlayerPositionReceived(player);
                     break;
                 case MessageType.MatchJoined:
@@ -86,11 +93,11 @@ namespace MyGame
                     LocalPlayer.InGame = true;
                     break;
                 case MessageType.PlayerRotation:
-                    PlayerRotation playerRotation = _client.Deserialize<PlayerRotation>(msg.Data);
+                    PlayerRotation playerRotation = _client.MsgFactory.Deserialize<PlayerRotation>(msg.Data);
                     PlayerRotationReceived(playerRotation);
                     break;
                 default:
-                    Debug.Log("Unknown message type");
+                    Debug.LogWarning("Unknown message type " + msg.MsgType);
                     break;
             }
         }

@@ -4,6 +4,7 @@ using UnityEngine.UI;
 using MyGame.NetworkSetup;
 using MyGame;
 using MyGame.DTOs;
+using NetworkLib.Common.DTOs;
 
 public class CanvasController : MonoBehaviour
 {
@@ -43,6 +44,11 @@ public class CanvasController : MonoBehaviour
         string username = "username_" + Random.Range(0, 1000);
         GameController.Instance.LocalPlayer.SetUser(new User(username));
         ClientInit.Instance.SendLogin(username, "password");
+    }
+
+    public void Options()
+    {
+        ClientInit.Instance.Send(MessageType.Message, "Hello from client");
     }
 
     public void Queue()

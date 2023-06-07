@@ -1,88 +1,133 @@
+using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using NetworkLib.Common.DTOs;
+using NetworkLib.Common.Interfaces;
 using NetworkLib.GameClient;
 
 namespace NetworkLib.GameServer
 {
     public class Match : IMatch
     {
-        protected ConcurrentDictionary<string, Client> Clients = new ConcurrentDictionary<string, Client>();
+        protected ConcurrentDictionary<string, Client> _clients = new ConcurrentDictionary<string, Client>();
+        protected ConcurrentDictionary<string, Message> _lastMessages = new ConcurrentDictionary<string, Message>();
+        protected CancellationTokenSource _tokenSource;
+        protected Task _updateTask;
 
-        public Match()
+        public async Task AddPlayer(Client client)
         {
-        }
-
-        public virtual Client[] GetClients()
-        {
-            return Clients.Values.ToArray();
-        }
-
-        public virtual void AddPlayer(Client client)
-        {
-            Clients.TryAdd(client.NetworkHandler.Auth.Username, client);
+            _clients.TryAdd(client.NetworkHandler.Auth.Username, client);
+            Server.Log.Log("Match: Added player " + client.NetworkHandler.Auth.Username);
 
             // Notify other clients in the match about the new player
-            foreach (Client c in Clients.Values)
-            {
-                if (c.NetworkHandler.Auth.Username != client.NetworkHandler.Auth.Username)
-                {
-                    _ = c.SendAsync(new Message(MessageType.PlayerJoined, c.Serialize(client.NetworkHandler.Auth.Username)));
-                }
-            }
+            IEnumerable<Task> tasks = _clients.Values
+                .Where(c => c.NetworkHandler.Auth.Username != client.NetworkHandler.Auth.Username)
+                .Select(c => c.SendAsync(c.MsgFactory.CreateMessage(MessageType.PlayerJoined, client.NetworkHandler.Auth.Username)));
+
+            _ = Task.WhenAll(tasks);
+            await client.SendAsync(new Message(MessageType.MatchJoined));
         }
 
-        public virtual void RemovePlayer(Client client)
+        public async Task Broadcast(Message msg)
         {
-            Clients.TryRemove(client.NetworkHandler.Auth.Username, out Client removedClient);
+            await Task.WhenAll(_clients.Values.Select(c => c.SendAsync(msg)));
+        }
 
-            // Notify other clients in the match about the removed player
-            foreach (Client c in Clients.Values)
-            {
-                if (c.NetworkHandler.Auth.Username != client.NetworkHandler.Auth.Username)
-                {
-                    _ = c.SendAsync(new Message(MessageType.PlayerLeft, c.Serialize(client.NetworkHandler.Auth.Username)));
-                }
-            }
+        public async Task Broadcast(Message[] msgs)
+        {
+            await Task.WhenAll(_clients.Values.Select(c => c.SendAsync(msgs)));
+        }
+
+        public async Task BroadcastExcept(Message msg, string username)
+        {
+            await Task.WhenAll(_clients.Values
+                .Where(c => c.NetworkHandler.Auth.Username != username)
+                .Select(c => c.SendAsync(msg)));
+        }
+
+        public Client[] GetClients()
+        {
+            return _clients.Values.ToArray();
         }
 
         public virtual Message[] GetState()
         {
-            return new Message[] { };
+            return _lastMessages.Values.ToArray();
         }
 
-        public virtual void UpdateState()
+        public async Task RemovePlayer(Client client)
         {
-            foreach (Client client in Clients.Values)
+            _clients.TryRemove(client.NetworkHandler.Auth.Username, out _);
+
+            // Notify other clients in the match about the removed player
+            IEnumerable<Task> tasks = _clients.Values
+                .Where(c => c.NetworkHandler.Auth.Username != client.NetworkHandler.Auth.Username)
+                .Select(c => c.SendAsync(c.MsgFactory.CreateMessage(MessageType.PlayerLeft, client.NetworkHandler.Auth.Username)));
+
+            await Task.WhenAll(tasks);
+        }
+
+        public void Shutdown()
+        {
+            StopUpdateLoop();
+        }
+
+        public void StartUpdateLoop()
+        {
+            _tokenSource = new CancellationTokenSource();
+            _updateTask = Task.Run(RunUpdateLoop);
+        }
+
+        public void StopUpdateLoop()
+        {
+            _tokenSource?.Cancel();
+            _updateTask?.Wait(); // Wait for the update loop to complete
+        }
+
+        protected virtual async Task ProcessMessage(Message msg, Client client)
+        {
+            await BroadcastExcept(msg, client.NetworkHandler.Auth.Username);
+        }
+
+        protected async Task RunUpdateLoop()
+        {
+            while (!_tokenSource.Token.IsCancellationRequested)
             {
-                if (client.NetworkHandler.Auth == null) //Player not logged in?
+                await UpdateState();
+                UpdateClients();
+                await Task.Delay((int)(CONSTANTS.ServerSpeed * 1000)); // Delay between iterations
+            }
+        }
+
+        protected async void UpdateClients()
+        {
+            Message[] msgs = GetState();
+            if (msgs.Length == 0 || _clients.Count == 0)
+                return;
+            await Broadcast(msgs);
+        }
+
+        protected virtual async Task UpdateState()
+        {
+            await Task.Run(() =>
+            {
+                Parallel.ForEach(_clients.Values, c =>
                 {
-                    continue;
-                }
-                while (client.NetworkHandler.GetQueueSize() > 0)
-                {
-                    if (client.NetworkHandler.TryDequeue(out Message msg))
+                    if (c.NetworkHandler.Auth == null) //Player not logged in?
                     {
-                        switch (msg.MsgType)
-                        {
-                            case MessageType.Message:
-                                Server.Log.Log($"Match handling Message {msg.MsgType}");
-                                break;
-                            default:
-                                Server.Log.Log($"Unhandled message type {msg.MsgType}");
-                                break;
-                        }
+                        Server.Log.LogWarning("Match: Player not logged in");
+                        return;
                     }
-                }
-            }
-        }
 
-        public virtual void Broadcast(Message msg)
-        {
-            foreach (Client client in Clients.Values)
-            {
-                _ = client.SendAsync(msg);
-            }
+                    while (c.NetworkHandler.TryDequeue(out Message msg))
+                    {
+                        _ = ProcessMessage(msg, c);
+                    }
+                });
+            });
         }
     }
 }

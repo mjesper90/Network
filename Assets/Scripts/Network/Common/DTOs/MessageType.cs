@@ -12,6 +12,7 @@ namespace NetworkLib.Common.DTOs
         Message,
         Login,
         JoinQueue,
+        QueueJoined,
         LoginResponse,
         MatchJoined,
         PlayerRotation

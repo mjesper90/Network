@@ -1,5 +1,7 @@
 using NetworkLib.Common.Logger;
 using UnityEngine;
+using UnityEngine.UI;
+
 namespace MyGame
 {
     public class UnityLogger : ILogNetwork

@@ -1,0 +1,64 @@
+@startuml
+
+set separator ::
+namespace MyGame #LightBlue{
+    namespace DTOs #LightSlateGray{
+        class PlayerPosition{}
+        class PlayerRotation{}
+    }
+    class GameController <<MonoBehaviour>> #LightSlateGray {
+        + void Start()
+        + void Update()
+        + void SetServer(Server server)
+        + void SetClient(Client client)
+        + Server GetServer()
+        + Client GetClient()
+        - void HandleMessage(Message msg)
+    }
+
+    namespace NetworkLib #LightGray{
+        class Match{}
+        class Client{}
+        class Server{}
+    }
+
+    struct CONSTANTS <<static>> #LightSlateGray {
+        + {static} int PORT
+        + {static} Vector3 CameraOffset
+        + {static} float Gravity
+        + {static} float ProjectileSpeed
+        + {static} float PlayerSpeed
+        + {static} float JumpForce
+    }
+
+    namespace Client #LightSlateGray{
+        class ClientInit <<MonoBehaviour>>{
+            + string IP = "127.0.0.1"
+            + int Port = 8052
+            + void Send(Message msg)
+        }
+    }
+    namespace Server #LightSlateGray{
+        class ServerInit <<MonoBehaviour>>{
+            + void Start()
+            + void FixedUpdate()
+            + void OnApplicationQuit()
+        }
+        class NotQuakeMatch{
+            # Dictionary<string, Message> _playerPositions
+            # Dictionary<string, Message> _playerRotations
+        }
+    }
+}
+
+MyGame::Server::ServerInit --> MyGame::NetworkLib::Server
+MyGame::Client::ClientInit --> MyGame::NetworkLib::Client
+MyGame::Server::NotQuakeMatch -up-|> MyGame::NetworkLib::Match
+
+
+MyGame::GameController *-- MyGame::NetworkLib::Server
+MyGame::GameController *-- MyGame::NetworkLib::Client
+
+
+
+@enduml

@@ -1,37 +1,49 @@
 using System;
 using System.IO;
 using System.Net.Sockets;
-using System.Runtime.Serialization;
-using System.Runtime.Serialization.Formatters.Binary;
+using System.Threading;
 using System.Threading.Tasks;
+using NetworkLib.Common;
 using NetworkLib.Common.DTOs;
+using NetworkLib.Common.Interfaces;
 using NetworkLib.Common.Logger;
 
 namespace NetworkLib.GameClient
 {
     public class Client
     {
-        public TcpClient Tcp;
-        public Network NetworkHandler;
-
-        private NetworkStream _tcpStream;
-        private byte[] _tcpReceiveBuffer;
-        private BinaryFormatter _binaryFormatter;
-
         // Logger
         public static ILogNetwork Log;
 
-        public Client(ILogNetwork log, TcpClient socket)
+        // Message Factory
+        public readonly MessageFactory MsgFactory;
+        public Guid Id;
+        public Network NetworkHandler;
+        public TcpClient Tcp;
+
+        private IMatch _match;
+        private SemaphoreSlim _semaphore = new SemaphoreSlim(1);
+
+        private NetworkStream _tcpStream;
+
+        public Client(ILogNetwork log, TcpClient socket, MessageFactory mf)
         {
-            _binaryFormatter = new BinaryFormatter();
+            Id = Guid.NewGuid();
             NetworkHandler = new Network(this);
             Tcp = socket;
             Log = log;
             Tcp.ReceiveBufferSize = CONSTANTS.BufferSize;
             Tcp.SendBufferSize = CONSTANTS.BufferSize;
             _tcpStream = Tcp.GetStream();
-            _tcpReceiveBuffer = new byte[CONSTANTS.BufferSize];
-            StartReceiving();
+            MsgFactory = mf;
+        }
+
+        public void Disconnect()
+        {
+            Log.Log("Client disconnected");
+            Tcp?.Close();
+            Tcp = null;
+            _tcpStream = null;
         }
 
         public bool IsConnected()
@@ -39,108 +51,61 @@ namespace NetworkLib.GameClient
             return Tcp?.Connected == true;
         }
 
-        public void Disconnect()
+        public void Send(Message msg)
         {
-            Log.LogWarning("Client disconnected");
-            Tcp?.Close();
-            Tcp = null;
-            _tcpStream = null;
-            _tcpReceiveBuffer = new byte[CONSTANTS.BufferSize];
+            byte[] bytes = MsgFactory.Serialize(msg);
+            Send(bytes);
         }
 
-        public async Task SendAsync(byte[] bytes)
-        {
-            try
-            {
-                if (_tcpStream.CanWrite)
-                {
-                    await _tcpStream.WriteAsync(bytes, 0, bytes.Length);
-                }
-                else
-                {
-                    Log.LogWarning("Cannot write to the network stream.");
-                }
-            }
-            catch (Exception e)
-            {
-                Log.LogWarning($"Error sending data: {e}");
-                Disconnect();
-            }
-        }
-
-        public async Task SendAsync(object obj)
+        public async Task SendAsync(Message msg, CancellationToken cancellationToken = default)
         {
             if (_tcpStream.CanWrite)
             {
-                byte[] bytes = Serialize(obj);
-                await SendAsync(bytes);
+                byte[] bytes = MsgFactory.Serialize(msg);
+                await SendAsync(bytes, cancellationToken);
             }
         }
 
-        public void Send(object obj)
+        public async Task SendAsync(Message[] msg, CancellationToken cancellationToken = default)
         {
             if (_tcpStream.CanWrite)
             {
-                byte[] bytes = Serialize(obj);
-                _tcpStream.Write(bytes, 0, bytes.Length);
+                byte[] bytes = MsgFactory.Serialize(msg);
+                await SendAsync(bytes, cancellationToken);
             }
         }
 
-        public void Send(byte[] bytes)
-        {
-            if (_tcpStream.CanWrite)
-            {
-                _tcpStream.Write(bytes, 0, bytes.Length);
-            }
-        }
-
-        public T Deserialize<T>(byte[] data)
-        {
-            try
-            {
-                using (MemoryStream ms = new MemoryStream(data))
-                {
-                    return (T)_binaryFormatter.Deserialize(ms);
-                }
-            }
-            catch (SerializationException e)
-            {
-                Log.LogWarning($"Error deserializing data: {e}");
-                return default(T);
-            }
-        }
-
-        public byte[] Serialize(object obj)
-        {
-            using (MemoryStream ms = new MemoryStream())
-            {
-                _binaryFormatter.Serialize(ms, obj);
-                return ms.ToArray();
-            }
-        }
-
-        private async void StartReceiving()
+        public async Task StartReceiving()
         {
             try
             {
                 while (IsConnected())
                 {
-                    int receivedLength = await _tcpStream.ReadAsync(_tcpReceiveBuffer, 0, CONSTANTS.BufferSize);
+                    byte[] bytes = new byte[CONSTANTS.BufferSize];
+                    int receivedLength = await _tcpStream.ReadAsync(bytes, 0, CONSTANTS.BufferSize);
                     if (receivedLength > 0)
                     {
                         byte[] data = new byte[receivedLength];
-                        Array.Copy(_tcpReceiveBuffer, data, receivedLength);
-                        object msg = Deserialize<object>(data);
-                        if (msg is Message)
+                        Array.Copy(bytes, data, receivedLength);
+
+                        if (data.Length > 0)
                         {
-                            NetworkHandler.Enqueue((Message)msg);
-                        }
-                        if (msg is Message[])
-                        {
-                            foreach (Message message in (Message[])msg)
+                            try
                             {
-                                NetworkHandler.Enqueue(message);
+                                object msg = MsgFactory.Deserialize<object>(data);
+                                ProcessMessage(msg);
                             }
+                            catch (Exception e)
+                            {
+                                Log.LogWarning($"Error processing received data: {e}");
+                                //Log.LogWarning($"Corrupted data: {BitConverter.ToString(data)}");
+                            }
+                        }
+                        else
+                        {
+                            Log.LogWarning("Received empty data - Disconnecting");
+                            Disconnect();
+                            break;
                         }
                     }
                     else
@@ -164,5 +129,62 @@ namespace NetworkLib.GameClient
             }
         }
 
+        protected void ProcessMessage(object obj)
+        {
+            if (obj is Message message)
+            {
+                Log.Log($"Received message: {message.MsgType}");
+                NetworkHandler.Enqueue(message);
+            }
+            else if (obj is Message[] messages)
+            {
+                Task.Run(() =>
+                {
+                    foreach (Message msg in messages)
+                    {
+                        NetworkHandler.Enqueue(msg);
+                    }
+                });
+            }
+        }
+
+        protected void Send(byte[] bytes)
+        {
+            try
+            {
+                _tcpStream.Write(bytes, 0, bytes.Length);
+                _tcpStream.Flush();
+            }
+            catch (Exception ex)
+            {
+                // Handle the exception appropriately, e.g., log the error, retry, or notify the caller
+                Log.LogWarning($"Error sending data: {ex.Message}");
+            }
+        }
+
+        protected async Task SendAsync(byte[] bytes, CancellationToken cancellationToken = default)
+        {
+            await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+            try
+            {
+                await _tcpStream.WriteAsync(bytes, 0, bytes.Length, cancellationToken).ConfigureAwait(false);
+                await _tcpStream.FlushAsync(cancellationToken).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                // Handle cancellation if necessary
+                Log.LogWarning("Sending operation was cancelled.");
+            }
+            catch (Exception e)
+            {
+                // Handle the exception appropriately, e.g., log the error, retry, or notify the caller
+                Log.LogError($"Error sending data: {e}");
+                Disconnect();
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
+        }
     }
 }

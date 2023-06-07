@@ -21,6 +21,12 @@ namespace MyGame #LightBlue{
 
     namespace NetworkLib #LightGray{
         namespace Common #LightYellow{
+            interface IMatch{
+                + void AddPlayer(Client client)
+                + void RemovePlayer(Client client)
+                + Message[] GetState()
+                + void UpdateState()
+            }
             namespace DTOs #LightGreen{
                 class Authentication{
                     + string Username
@@ -108,10 +114,6 @@ namespace MyGame #LightBlue{
             class Match{
                 + List<Client> Clients
                 - ConcurrentDictionary<string, Message> _playerPositions
-                + void AddPlayer(Client client)
-                + void RemovePlayer(Client client)
-                + Message[] GetState()
-                + void UpdateState()
             }
             class MatchMaking{
                 + List<Match> Matches
@@ -166,6 +168,7 @@ MyGame::NetworkLib::GameServer::MatchMaking *-- MyGame::NetworkLib::GameServer::
 MyGame::NetworkLib::GameServer::Match o-- MyGame::NetworkLib::GameClient::Client
 MyGame::NetworkLib::IClient <|-- MyGame::NetworkLib::GameClient::Client
 MyGame::NetworkLib::IServer <|-- MyGame::NetworkLib::GameServer::Server
+MyGame::NetworkLib::Common::IMatch <|-- MyGame::NetworkLib::GameServer::Match
 
 MyGame::NetworkLib::GameClient::Network *-- MyGame::NetworkLib::Common::DTOs::Authentication
 

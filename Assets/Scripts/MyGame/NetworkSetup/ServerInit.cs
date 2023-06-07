@@ -19,31 +19,15 @@ namespace MyGame.NetworkSetup
             }
             else
             {
-                Instance = this;
-            }
-        }
-
-        // Start is called before the first frame update
-        void Start()
-        {
 #if UNITY_EDITOR
-            Server = new Server(new UnityLogger("Server::"), Port, new NotQuakeMatch());
-            Debug.Log("Server started");
+                NotQuakeMatch match = new NotQuakeMatch();
+                Server = new Server(new UnityLogger("Server::"), Port, match);
+                Server.StartAcceptingClients();
+                Debug.Log("Server started");
 #else
 
 #endif
-        }
-
-        void FixedUpdate()
-        {
-            if (Server != null && _cooldown <= 0)
-            {
-                Server.UpdateServer();
-                _cooldown = CONSTANTS.ServerSpeed;
-            }
-            else
-            {
-                _cooldown -= Time.deltaTime;
+                Instance = this;
             }
         }
 
