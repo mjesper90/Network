@@ -10,7 +10,6 @@ GameObject:
   m_Component:
   - component: {fileID: 2713929191938764805}
   - component: {fileID: 2713929191938764804}
-  - component: {fileID: -5738860369638113714}
   m_Layer: 0
   m_Name: Client
   m_TagString: Untagged
@@ -28,7 +27,6 @@ Transform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
@@ -42,21 +40,8 @@ MonoBehaviour:
   m_GameObject: {fileID: 2713929191938764807}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a1b7b73eb9bf157479834c1732b76f95, type: 3}
+  m_Script: {fileID: 11500000, guid: 730eb27f9bafb5b4da79bcae24c2742f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   IP: 127.0.0.1
   Port: 8052
-  LocalPlayer: {fileID: 0}
---- !u!114 &-5738860369638113714
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2713929191938764807}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f42374b32cbb60a4a94d68c39378ca0b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 

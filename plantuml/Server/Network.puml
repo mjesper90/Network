@@ -1,0 +1,14 @@
+@startuml
+class Network {
+    + Network(serverClient:ServerClient)
+    + GetBatch() : Batch
+    + Recieve(obj:object) : void
+    + SendBatch(batch:Batch) : void
+    + SendUser(user:User) : void
+    + SendProjectile(projectile:Projectile) : void
+}
+class "List`1"<T> {
+}
+Network --> "UserRef" User
+Network o-> "Projectiles<Projectile>" "List`1"
+@enduml

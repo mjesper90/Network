@@ -1,0 +1,12 @@
+@startuml
+class Server {
+    + Port : int <<get>>
+    + Server(port:int)
+    + Shutdown() : void
+    + Update() : void
+}
+class "List`1"<T> {
+}
+Server --> "TCPListener" TcpListener
+Server o-> "Clients<ServerClient>" "List`1"
+@enduml

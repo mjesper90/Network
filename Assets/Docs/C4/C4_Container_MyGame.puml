@@ -1,0 +1,32 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+
+Person(developer, "Developer", "A person who develops games")
+Person(player, "Player", "A person who plays games")
+
+System_Boundary(mygame, "My Game", "A game I made") {
+    Container(c_player, "Player", "an ingame character")
+    Container(c_network, "NetworkSetup", "the network initialization")
+    Container(gamecontroller, "GameController", "the game controller")
+    Container(msgHandler, "MessageHandler", "the message handler")
+    Container(myMatch, "Match", "the match")
+    Container(ui, "UI", "the user interface")
+    System_Boundary(network_lib, "Network Library", "A library for networking"){
+    }
+}
+
+developer --> mygame : develops
+player --> mygame : plays
+c_player <-- myMatch : handles
+gamecontroller --> c_player : handles
+c_network --> network_lib : Client
+c_network --> network_lib : Server
+c_network --> myMatch : hosts
+msgHandler <-- network_lib : queues
+msgHandler --> gamecontroller : updates
+myMatch -up-> network_lib : uses
+msgHandler --> c_player : updates
+
+
+@enduml

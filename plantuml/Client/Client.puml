@@ -1,0 +1,8 @@
+@startuml
+class Client {
+    + Client(ip:string, port:int)
+    + Send(bytes:byte[]) : void
+    + Send(obj:object) : void
+}
+Client --> "NetworkHandler" Network
+@enduml
