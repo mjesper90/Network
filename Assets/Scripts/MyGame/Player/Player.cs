@@ -7,14 +7,13 @@ namespace MyGame
 {
     public class Player : MonoBehaviour
     {
-        public Weapon Weapon;
+        public string Username;
+        public string MatchId;
         public bool IsLocal = false;
-
-        public bool InGame = false;
         public bool LoggedIn = false;
-        private Rigidbody _rb;
+        public Weapon Weapon;
         private bool _isGrounded = false;
-        private User _user = null;
+        private Rigidbody _rb;
 
         public void Awake()
         {
@@ -33,6 +32,26 @@ namespace MyGame
             Weapon.transform.SetParent(transform);
             //Move weapon slightly
             Weapon.transform.localPosition = new Vector3(0.5f, 0f, 0f);
+        }
+
+        public void Jump()
+        {
+            if (_isGrounded)
+            {
+                _rb.AddForce(Vector3.up * CONSTANTS.JumpForce, ForceMode.Impulse);
+                StartCoroutine(JumpCoroutine());
+            }
+        }
+
+        //Lerp movement
+        public void LerpMovement(Vector3 vector3)
+        {
+            StartCoroutine(LerpMovementCoroutine(vector3, CONSTANTS.ServerSpeed));
+        }
+
+        public void LerpRotation(float eulerAnglesY)
+        {
+            StartCoroutine(LerpRotationCoroutine(eulerAnglesY, CONSTANTS.ServerSpeed));
         }
 
         public void Update()
@@ -54,38 +73,38 @@ namespace MyGame
             }
         }
 
-        public void SetUser(User user)
+        //Jump coroutine
+        private IEnumerator JumpCoroutine()
         {
-            _user = user;
+            yield return new WaitForSeconds(0.1f);
+            _isGrounded = false;
         }
 
-        public User GetUser()
+        //Lerp movement coroutine
+        private IEnumerator LerpMovementCoroutine(Vector3 vector3, float time)
         {
-            return _user;
-        }
-
-        public void Jump()
-        {
-            if (_isGrounded)
+            float elapsedTime = 0;
+            Vector3 startingPos = transform.position;
+            while (elapsedTime < time)
             {
-                _rb.AddForce(Vector3.up * CONSTANTS.JumpForce, ForceMode.Impulse);
-                StartCoroutine(JumpCoroutine());
+                transform.position = Vector3.Lerp(startingPos, vector3, (elapsedTime / time));
+                elapsedTime += Time.deltaTime;
+                yield return new WaitForEndOfFrame();
             }
+            transform.position = vector3;
         }
 
-        private void Rotation()
+        private IEnumerator LerpRotationCoroutine(float eulerAnglesY, float serverSpeed)
         {
-            //Rotate transform with mouse
-            float mouseX = Input.GetAxis("Mouse X");
-            transform.Rotate(Vector3.up * mouseX);
-        }
-
-        private void Shoot()
-        {
-            if (Weapon != null && Input.GetMouseButtonDown(0))
+            float elapsedTime = 0;
+            float startingRotation = transform.eulerAngles.y;
+            while (elapsedTime < serverSpeed)
             {
-                MonoProjectile p = Weapon.GetComponent<Weapon>().PewPew(true);
+                transform.eulerAngles = new Vector3(transform.eulerAngles.x, Mathf.LerpAngle(startingRotation, eulerAnglesY, (elapsedTime / serverSpeed)), transform.eulerAngles.z);
+                elapsedTime += Time.deltaTime;
+                yield return new WaitForEndOfFrame();
             }
+            transform.eulerAngles = new Vector3(transform.eulerAngles.x, eulerAnglesY, transform.eulerAngles.z);
         }
 
         private void Movement()
@@ -106,7 +125,7 @@ namespace MyGame
                 Jump();
             }
 
-            //WASD Movement 
+            //WASD Movement
             Vector3 movement = Vector3.zero;
             if (Input.GetKey(KeyCode.W))
             {
@@ -129,49 +148,19 @@ namespace MyGame
             _rb.velocity = new Vector3(movement.x, _rb.velocity.y, movement.z);
         }
 
-        //Jump coroutine
-        private IEnumerator JumpCoroutine()
+        private void Rotation()
         {
-            yield return new WaitForSeconds(0.1f);
-            _isGrounded = false;
+            //Rotate transform with mouse
+            float mouseX = Input.GetAxis("Mouse X");
+            transform.Rotate(Vector3.up * mouseX);
         }
 
-        //Lerp movement
-        public void LerpMovement(Vector3 vector3)
+        private void Shoot()
         {
-            StartCoroutine(LerpMovementCoroutine(vector3, CONSTANTS.ServerSpeed));
-        }
-
-        //Lerp movement coroutine
-        private IEnumerator LerpMovementCoroutine(Vector3 vector3, float time)
-        {
-            float elapsedTime = 0;
-            Vector3 startingPos = transform.position;
-            while (elapsedTime < time)
+            if (Weapon != null && Input.GetMouseButtonDown(0))
             {
-                transform.position = Vector3.Lerp(startingPos, vector3, (elapsedTime / time));
-                elapsedTime += Time.deltaTime;
-                yield return new WaitForEndOfFrame();
+                MonoProjectile p = Weapon.GetComponent<Weapon>().PewPew(true);
             }
-            transform.position = vector3;
-        }
-
-        public void LerpRotation(float eulerAnglesY)
-        {
-            StartCoroutine(LerpRotationCoroutine(eulerAnglesY, CONSTANTS.ServerSpeed));
-        }
-
-        private IEnumerator LerpRotationCoroutine(float eulerAnglesY, float serverSpeed)
-        {
-            float elapsedTime = 0;
-            float startingRotation = transform.eulerAngles.y;
-            while (elapsedTime < serverSpeed)
-            {
-                transform.eulerAngles = new Vector3(transform.eulerAngles.x, Mathf.LerpAngle(startingRotation, eulerAnglesY, (elapsedTime / serverSpeed)), transform.eulerAngles.z);
-                elapsedTime += Time.deltaTime;
-                yield return new WaitForEndOfFrame();
-            }
-            transform.eulerAngles = new Vector3(transform.eulerAngles.x, eulerAnglesY, transform.eulerAngles.z);
         }
     }
 }

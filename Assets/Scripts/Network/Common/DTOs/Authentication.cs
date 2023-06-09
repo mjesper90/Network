@@ -3,10 +3,10 @@ using System;
 namespace NetworkLib.Common.DTOs
 {
     [Serializable]
-    public class Authentication
+    public class Authentication : Message
     {
-        public string Username;
-        public string Password;
+        public string Username { get; }
+        public string Password { get; }
 
         public Authentication(string username, string password)
         {

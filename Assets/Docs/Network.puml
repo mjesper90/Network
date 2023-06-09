@@ -121,7 +121,6 @@ namespace MyGame #LightBlue{
                 + void Join(Client client)
             }
         }
-
     }
 
     struct CONSTANTS <<static>> #LightSlateGray {
@@ -156,7 +155,6 @@ namespace MyGame #LightBlue{
     class UnityLogger #LightSlateGray {
 
     }
-
 }
 
 

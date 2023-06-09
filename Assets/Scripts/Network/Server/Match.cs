@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using NetworkLib.Common.DTOs;
+using NetworkLib.Common.DTOs.MatchMaking;
 using NetworkLib.Common.Interfaces;
 using NetworkLib.GameClient;
 
@@ -14,6 +15,7 @@ namespace NetworkLib.GameServer
     {
         protected ConcurrentDictionary<string, Client> _clients = new ConcurrentDictionary<string, Client>();
         protected ConcurrentDictionary<string, Message> _lastMessages = new ConcurrentDictionary<string, Message>();
+        protected Guid _id = Guid.NewGuid();
         protected CancellationTokenSource _tokenSource;
         protected Task _updateTask;
 
@@ -25,10 +27,10 @@ namespace NetworkLib.GameServer
             // Notify other clients in the match about the new player
             IEnumerable<Task> tasks = _clients.Values
                 .Where(c => c.NetworkHandler.Auth.Username != client.NetworkHandler.Auth.Username)
-                .Select(c => c.SendAsync(c.MsgFactory.CreateMessage(MessageType.PlayerJoined, client.NetworkHandler.Auth.Username)));
+                .Select(c => c.SendAsync(new PlayerJoined(client.NetworkHandler.Auth.Username, _id.ToString())));
 
             _ = Task.WhenAll(tasks);
-            await client.SendAsync(new Message(MessageType.MatchJoined));
+            _ = client.SendAsync(new MatchMessage(_id.ToString()));
         }
 
         public async Task Broadcast(Message msg)
@@ -65,7 +67,7 @@ namespace NetworkLib.GameServer
             // Notify other clients in the match about the removed player
             IEnumerable<Task> tasks = _clients.Values
                 .Where(c => c.NetworkHandler.Auth.Username != client.NetworkHandler.Auth.Username)
-                .Select(c => c.SendAsync(c.MsgFactory.CreateMessage(MessageType.PlayerLeft, client.NetworkHandler.Auth.Username)));
+                .Select(c => c.SendAsync(new PlayerLeft(client.NetworkHandler.Auth.Username, _id.ToString())));
 
             await Task.WhenAll(tasks);
         }

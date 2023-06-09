@@ -1,5 +1,6 @@
 namespace NetworkLib.Common.DTOs
 {
+    /*
     public enum MessageType
     {
         User,
@@ -15,6 +16,8 @@ namespace NetworkLib.Common.DTOs
         QueueJoined,
         LoginResponse,
         MatchJoined,
-        PlayerRotation
+        PlayerRotation,
+        Test
     }
+    */
 }

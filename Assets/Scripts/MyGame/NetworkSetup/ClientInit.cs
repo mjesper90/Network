@@ -5,6 +5,7 @@ using System.Runtime.Serialization.Formatters.Binary;
 using MyGame.DTOs;
 using NetworkLib.Common;
 using NetworkLib.Common.DTOs;
+using NetworkLib.Common.DTOs.MatchMaking;
 using NetworkLib.GameClient;
 using UnityEngine;
 
@@ -30,12 +31,6 @@ namespace MyGame.NetworkSetup
                 Instance = this;
             }
             MsgFactory = new MessageFactory(new UnityLogger("MessageFactory::"), new BinaryFormatter());
-        }
-
-        public void Send(MessageType msgType, string v)
-        {
-            Debug.Log("Sending message: " + v);
-            Client.Send(MsgFactory.CreateMessage(msgType, v));
         }
 
         protected void FixedUpdate()
@@ -73,16 +68,14 @@ namespace MyGame.NetworkSetup
 
         private void SendPlayerPositionAndRotation()
         {
-            if (Client?.IsConnected() == true && GameController.Instance.LocalPlayer?.InGame == true)
+            if (Client?.IsConnected() == true && GameController.Instance.LocalPlayer.MatchId != "")
             {
                 try
                 {
                     Player p = GameController.Instance.LocalPlayer;
                     Vector3 pos = p.transform.position;
                     Client.Log.LogWarning("Sending player position: " + pos);
-                    PlayerPosition playerPos = new PlayerPosition(p.GetUser().Username, pos.x, pos.y, pos.z);
-                    _ = Client.SendAsync(new Message(MessageType.PlayerPosition, Client.MsgFactory.Serialize(playerPos)));
-                    _ = Client.SendAsync(new Message(MessageType.PlayerRotation, Client.MsgFactory.Serialize(new PlayerRotation(p.GetUser().Username, p.transform.rotation.eulerAngles.y))));
+                    _ = Client.SendAsync(new PositionAndYRotation(p.Username, pos.x, pos.y, pos.z, p.transform.rotation.eulerAngles.y));
                 }
                 catch (Exception e)
                 {
@@ -98,12 +91,12 @@ namespace MyGame.NetworkSetup
 
         public void SendLogin(string username, string password)
         {
-            Client.Send(new Message(MessageType.Login, Client.MsgFactory.Serialize(new Authentication(username, password))));
+            Client.Send(new Authentication(username, password));
         }
 
         public void SendQueue()
         {
-            Client.Send(new Message(MessageType.JoinQueue));
+            Client.Send(new QueueMessage());
         }
     }
 }

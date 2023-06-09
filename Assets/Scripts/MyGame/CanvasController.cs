@@ -3,7 +3,6 @@ using UnityEngine;
 using UnityEngine.UI;
 using MyGame.NetworkSetup;
 using MyGame;
-using MyGame.DTOs;
 using NetworkLib.Common.DTOs;
 
 public class CanvasController : MonoBehaviour
@@ -42,13 +41,13 @@ public class CanvasController : MonoBehaviour
     public void Login()
     {
         string username = "username_" + Random.Range(0, 1000);
-        GameController.Instance.LocalPlayer.SetUser(new User(username));
+        GameController.Instance.LocalPlayer.Username = username;
         ClientInit.Instance.SendLogin(username, "password");
     }
 
     public void Options()
     {
-        ClientInit.Instance.Send(MessageType.Message, "Hello from client");
+        ClientInit.Instance.Client.Send(new TestMessage("test"));
     }
 
     public void Queue()

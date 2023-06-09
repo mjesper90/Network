@@ -17,19 +17,19 @@ namespace NetworkLib.Common
             _log = log;
         }
 
-        public Message CreateMessage(MessageType messageType, string messageText)
+        public Message CreateMessage(string messageText)
         {
-            return new Message(messageType, Serialize(messageText));
+            return new Message(Serialize(messageText));
         }
 
-        public Message CreateMessage(MessageType messageType, object messageObject)
+        public Message CreateMessage(object messageObject)
         {
-            return new Message(messageType, Serialize(messageObject));
+            return new Message(Serialize(messageObject));
         }
 
-        public Message CreateMessage(MessageType messageType, byte[] messageData)
+        public Message CreateMessage(byte[] messageData)
         {
-            return new Message(messageType, messageData);
+            return new Message(messageData);
         }
 
         public T Deserialize<T>(byte[] data)

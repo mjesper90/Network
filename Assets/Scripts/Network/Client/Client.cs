@@ -23,6 +23,7 @@ namespace NetworkLib.GameClient
 
         private IMatch _match;
         private SemaphoreSlim _semaphore = new SemaphoreSlim(1);
+        public Guid _clientId = Guid.NewGuid();
 
         private NetworkStream _tcpStream;
 
@@ -53,8 +54,16 @@ namespace NetworkLib.GameClient
 
         public void Send(Message msg)
         {
-            byte[] bytes = MsgFactory.Serialize(msg);
-            Send(bytes);
+            if (Tcp != null && _tcpStream?.CanWrite == true)
+            {
+                byte[] bytes = MsgFactory.Serialize(msg);
+                Send(bytes);
+            }
+            else
+            {
+                // Handle the case when the object is disposed
+                Log.LogWarning("Cannot send message. The TcpClient or NetworkStream is disposed.");
+            }
         }
 
         public async Task SendAsync(Message msg, CancellationToken cancellationToken = default)
@@ -110,11 +119,16 @@ namespace NetworkLib.GameClient
                     }
                     else
                     {
-                        Log.LogWarning("Received 0 bytes - Disconnecting");
+                        Log.Log("Received 0 bytes - Disconnecting");
                         Disconnect();
                         break;
                     }
                 }
+            }
+            catch (ObjectDisposedException)
+            {
+                Log.Log("The TcpClient or NetworkStream is disposed while receiving data.");
+                Disconnect();
             }
             catch (IOException e)
             {
@@ -133,7 +147,6 @@ namespace NetworkLib.GameClient
         {
             if (obj is Message message)
             {
-                Log.Log($"Received message: {message.MsgType}");
                 NetworkHandler.Enqueue(message);
             }
             else if (obj is Message[] messages)

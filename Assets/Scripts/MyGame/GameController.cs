@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using MyGame.DTOs;
 using MyGame.NetworkSetup;
 using NetworkLib.Common.DTOs;
+using NetworkLib.Common.DTOs.MatchMaking;
 using NetworkLib.GameClient;
 using NetworkLib.GameServer;
 using UnityEngine;
@@ -68,68 +69,61 @@ namespace MyGame
 
         private void HandleMessage(Message msg)
         {
-            Debug.Log("Message received " + msg.MsgType);
-            switch (msg.MsgType)
-            {
-                case MessageType.LoginResponse:
-                    LocalPlayer.LoggedIn = true;
-                    Players.Add(LocalPlayer.GetUser().Username, LocalPlayer.gameObject);
-                    CanvasController.Instance.QueueButton.interactable = true;
-                    CanvasController.Instance.LoginButton.interactable = false;
-                    break;
-                case MessageType.Message:
-                    Debug.Log("Message " + _client.MsgFactory.Deserialize<string>(msg.Data));
-                    break;
-                case MessageType.User:
-                    User user = _client.MsgFactory.Deserialize<User>(msg.Data);
-                    UserReceived(user);
-                    break;
-                case MessageType.PlayerPosition:
-                    PlayerPosition player = _client.MsgFactory.Deserialize<PlayerPosition>(msg.Data);
-                    PlayerPositionReceived(player);
-                    break;
-                case MessageType.MatchJoined:
-                    CanvasController.Instance.QueueButton.interactable = false;
-                    LocalPlayer.InGame = true;
-                    break;
-                case MessageType.PlayerRotation:
-                    PlayerRotation playerRotation = _client.MsgFactory.Deserialize<PlayerRotation>(msg.Data);
-                    PlayerRotationReceived(playerRotation);
-                    break;
-                default:
-                    Debug.LogWarning("Unknown message type " + msg.MsgType);
-                    break;
-            }
-        }
+            Debug.Log("Message received " + msg.GetType());
 
-        private void PlayerRotationReceived(PlayerRotation pr)
-        {
-            if (Players.ContainsKey(pr.Username))
+            if (msg is LoginResponse)
             {
-                if (pr.Username != LocalPlayer.GetUser().Username)
+                LocalPlayer.LoggedIn = true;
+                Players.Add(LocalPlayer.Username, LocalPlayer.gameObject);
+                CanvasController.Instance.QueueButton.interactable = true;
+                CanvasController.Instance.LoginButton.interactable = false;
+            }
+            else if (msg is PositionAndYRotation)
+            {
+                PlayerPositionReceived(msg as PositionAndYRotation);
+            }
+            else if (msg is MatchMessage)
+            {
+                //Match found
+                LocalPlayer.MatchId = (msg as MatchMessage).MatchId;
+            }
+            else if (msg is QueueMessage)
+            {
+                CanvasController.Instance.QueueButton.interactable = false;
+            }
+            else if (msg is PlayerLeft)
+            {
+                PlayerLeft pl = msg as PlayerLeft;
+                if (Players.ContainsKey(pl.Username))
                 {
-                    Players[pr.Username].GetComponent<Player>().LerpRotation(pr.Y);
+                    Destroy(Players[pl.Username]);
+                    Players.Remove(pl.Username);
                 }
             }
+            else if (msg is PlayerJoined)
+            {
+                Debug.Log("Player joined");
+            }
+            else
+            {
+                Debug.LogWarning("Unknown message type " + msg.GetType());
+            }
         }
 
-        private void PlayerPositionReceived(PlayerPosition user)
+        private void PlayerPositionReceived(PositionAndYRotation pos)
         {
             try
             {
-                if (Players.ContainsKey(user.Username))
+                if (Players.ContainsKey(pos.Username))
                 {
-                    if (user.Username != LocalPlayer.GetUser().Username)
+                    if (pos.Username != LocalPlayer.Username)
                     {
-                        Players[user.Username].GetComponent<Player>().LerpMovement(new Vector3(user.Pos.X, user.Pos.Y, user.Pos.Z));
+                        Players[pos.Username].GetComponent<Player>().LerpMovement(new Vector3(pos.X, pos.Y, pos.Z));
                     }
                 }
                 else
                 {
-                    GameObject go = Instantiate(Resources.Load(CONSTANTS.PlayerPrefab), new Vector3(user.Pos.X, user.Pos.Y, user.Pos.Z), Quaternion.identity) as GameObject;
-                    Players.Add(user.Username, go);
-                    Player p = go.GetComponent<Player>();
-                    p.SetUser(new User(user.Username));
+                    SpawnNewPlayer(pos);
                 }
             }
             catch (Exception e)
@@ -137,10 +131,12 @@ namespace MyGame
                 Debug.Log(e.Message);
             }
         }
-
-        private void UserReceived(User user)
+        private void SpawnNewPlayer(PositionAndYRotation posAndYRotation)
         {
-            Players[user.Username].GetComponent<Player>().SetUser(user);
+            GameObject go = Instantiate(Resources.Load(CONSTANTS.PlayerPrefab), new Vector3(posAndYRotation.X, posAndYRotation.Y, posAndYRotation.Z), Quaternion.identity) as GameObject;
+            Players.Add(posAndYRotation.Username, go);
+            Player p = go.GetComponent<Player>();
+            p.Username = posAndYRotation.Username;
         }
     }
 }

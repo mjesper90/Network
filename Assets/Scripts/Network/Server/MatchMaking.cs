@@ -4,18 +4,19 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using NetworkLib.Common.DTOs;
+using NetworkLib.Common.DTOs.MatchMaking;
 using NetworkLib.Common.Interfaces;
 using NetworkLib.GameClient;
 
 namespace NetworkLib.GameServer
 {
-    public class MatchMaking : IMatchMaking
+    public class MatchMaking
     {
         public ICollection<IMatch> Matches;
         public ConcurrentQueue<Client> Queue = new ConcurrentQueue<Client>();
 
-        private bool _matchGoing = false;
-        private int _matchMinPlayers = 1;
+        protected bool _matchGoing = false;
+        protected int _matchMinPlayers = 1;
 
         public MatchMaking(IMatch match)
         {
@@ -28,7 +29,7 @@ namespace NetworkLib.GameServer
         {
             Queue.Enqueue(client);
             client.NetworkHandler.InQueue = true;
-            _ = client.SendAsync(new Message(MessageType.QueueJoined));
+            _ = client.SendAsync(new QueueMessage());
         }
 
         public void Shutdown()
@@ -39,7 +40,7 @@ namespace NetworkLib.GameServer
             }
         }
 
-        private void StartQueueLoop()
+        protected virtual void StartQueueLoop()
         {
             Task.Run(async () =>
             {
@@ -48,9 +49,8 @@ namespace NetworkLib.GameServer
                     if (Queue.Count >= _matchMinPlayers && !_matchGoing)
                     {
                         _matchGoing = true;
-                        Server.Log.Log("Match going");
                     }
-                    if (Queue.Count > 0 && _matchGoing)
+                    if (Queue.Count > 0 && _matchGoing) //Join players to match
                     {
                         Client client = null;
                         Queue.TryDequeue(out client);

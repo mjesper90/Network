@@ -10,6 +10,7 @@ using NetworkLib.Common.DTOs;
 using NetworkLib.Common.Interfaces;
 using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
+using NetworkLib.Common.DTOs.MatchMaking;
 
 namespace NetworkLib.GameServer
 {
@@ -64,6 +65,7 @@ namespace NetworkLib.GameServer
 
             Log.Log("Server shutting down");
             _isShuttingDown = true;
+            Task.Delay(1000).Wait();
             _mm.Shutdown();
 
             foreach (Client client in _clients.Values)
@@ -175,13 +177,14 @@ namespace NetworkLib.GameServer
 
         protected async Task ProcessMessage(Client client, Message msg)
         {
-            if (msg.MsgType == MessageType.Login && client.NetworkHandler.Auth == null)
+            if (msg is Authentication && client.NetworkHandler.Auth == null)
             {
-                client.NetworkHandler.Auth = client.MsgFactory.Deserialize<Authentication>(msg.Data);
+                //client.NetworkHandler.Auth = client.MsgFactory.Deserialize<Authentication>(msg.Data);
+                client.NetworkHandler.Auth = msg as Authentication;
                 Log.Log($"User {client.NetworkHandler.Auth.Username} logged in");
-                _ = client.SendAsync(new Message(MessageType.LoginResponse));
+                _ = client.SendAsync(new LoginResponse(true, "Login successful"));
             }
-            else if (msg.MsgType == MessageType.JoinQueue && client.NetworkHandler.Auth != null)
+            else if (msg is QueueMessage && client.NetworkHandler.Auth != null)
             {
                 client.NetworkHandler.InQueue = true;
                 Log.Log($"User {client.NetworkHandler.Auth.Username} joined queue");
@@ -189,7 +192,7 @@ namespace NetworkLib.GameServer
             }
             else
             {
-                Log.LogWarning($"Unknown message type {msg.MsgType}");
+                Log.LogWarning($"Unknown message type: {msg.GetType()}");
             }
         }
         #endregion
