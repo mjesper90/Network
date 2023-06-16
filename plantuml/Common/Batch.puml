@@ -1,7 +1,0 @@
-@startuml
-class Batch {
-    + Batch(projectiles:Projectile[], users:User[])
-    + Append(batch:Batch) : void
-    + <<override>> ToString() : string
-}
-@enduml
