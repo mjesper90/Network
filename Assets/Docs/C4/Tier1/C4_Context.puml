@@ -1,0 +1,30 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+Person_Ext(P1, "Gamer", "Plays")
+Person(P2, "Developer", "Develops")
+Person_Ext(P3, "Steam", "Publishes")
+Person(P4, "TeamAwesome", "Develops")
+System(S1, "AwesomeNet", "Library")
+System_Ext(S2, "Unity", "Engine")
+System(C1, "MyGame", "This is where all the cool stuff happens")
+
+P1 --> C1 : Plays
+P4 -> S1 : Develops
+P2 --> C1 : Develops
+P1 -> P3 : $$$
+P3 -> P2 : $$$
+C1 --> S1 : Uses
+S2 <- C1 : Uses
+
+note right of C1 
+    This is an awesome game,
+    maybe it's Chex, maybe it's Quake.
+end note
+
+note right of S1
+    This is the network library,
+    assisting in the game's multiplayer.
+end note
+
+@enduml
