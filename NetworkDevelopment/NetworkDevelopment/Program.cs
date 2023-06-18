@@ -27,7 +27,7 @@ while (true)
         break;
     if (input == "try")
     {
-        client.Connect(new(NetworkHelper.GetLocalIPAddress().Address, Consts.LISTENING_PORT));
+        client.Connect(new(NetworkHelper.GetLocalIPAddress().Address, Consts.SEVER_LISTENING_PORT));
 
         if (client.IsConnected)
         {

@@ -7,7 +7,7 @@ namespace Network.ServerSide;
 public class ClientHandle : IDisposable
 {
     public string UserName { get; init; }
-    public uint ID { get; init; }
+    public Guid ID { get; init; }
     public IPEndPoint EndPointIP { get; init; }
     public int LocalPort { get; init; }
 
@@ -15,7 +15,7 @@ public class ClientHandle : IDisposable
 
     private Common.Network _network { get; init; }
 
-    public ClientHandle(string userName, uint iD, TcpClient tcpClient, IPEndPoint endPointIP, int localPort)
+    public ClientHandle(string userName, Guid iD, TcpClient tcpClient, IPEndPoint endPointIP, int localPort)
     {
         UserName = userName;
         ID = iD;

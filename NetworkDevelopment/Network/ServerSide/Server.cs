@@ -21,15 +21,13 @@ public class Server : IDisposable
 
     
 
-    private Dictionary<uint, ClientHandle> _clients = new Dictionary<uint, ClientHandle>();
+    private Dictionary<Guid, ClientHandle> _clients = new Dictionary<Guid, ClientHandle>();
     private List<ClientHandle> _clientsDisconnected = new List<ClientHandle>();
     private int _clientPort = 5678; // Doing this and just adding one to the port for each client is a really bad ideer
 
-    // Starts at 1 since 0 is an invalid id
-    private uint _clientIDCounter = 1;
-    private TcpListener _clientRequestListener = new TcpListener(IPAddress.Any, Consts.LISTENING_PORT);
+    private TcpListener _clientRequestListener = new TcpListener(IPAddress.Any, Consts.SEVER_LISTENING_PORT);
     private CancellationToken cancellationToken = new CancellationToken();
-    private IPEndPoint? _listenIPEndPoint = new IPEndPoint(IPAddress.Any, Consts.LISTENING_PORT);
+    private IPEndPoint? _listenIPEndPoint = new IPEndPoint(IPAddress.Any, Consts.SEVER_LISTENING_PORT);
 
     public Server()
     {
@@ -72,7 +70,7 @@ public class Server : IDisposable
 
         if (ValidateConnectionRequest(client, out var clientIP, out var userName))
         {
-            ClientHandle newClient = new ClientHandle(userName, _clientIDCounter++, client, clientIP, _clientPort++);
+            ClientHandle newClient = new ClientHandle(userName, Guid.NewGuid(), client, clientIP, _clientPort++);
             _clients.Add(newClient.ID, newClient);
         }
     }
@@ -176,7 +174,7 @@ public class Server : IDisposable
         var tempClients = _clients.Values;
         foreach (ClientHandle clientHandle in tempClients)
         {
-            uint clientID = clientHandle.ID;
+            Guid clientID = clientHandle.ID;
 
             if (!GetPacketFromClient(clientHandle, packets))
                 HandleDisconnectedClient(clientHandle);
@@ -214,12 +212,12 @@ public class Server : IDisposable
         }
     }
 
-    public bool SendDataToClient<Data_Type>(uint ID, Data_Type data, bool isSafe = true)
+    public bool SendDataToClient<Data_Type>(Guid ID, Data_Type data, bool isSafe = true)
     {
         return SendPacketToClient(ID, Serializer.GetPacket(data).ChangeSafty(isSafe));
     }
 
-    public bool SendPacketToClient(uint ID, Packet packet)
+    public bool SendPacketToClient(Guid ID, Packet packet)
     {
         ClientHandle client = _clients[ID];
         if (!CheckClientConnection(client))
@@ -252,7 +250,7 @@ public class Server : IDisposable
 
     public IPEndPoint GetListeningIP()
     {
-        IPEndPoint e = new IPEndPoint(NetworkHelper.GetLocalIPAddress(), Consts.LISTENING_PORT);
+        IPEndPoint e = new IPEndPoint(NetworkHelper.GetLocalIPAddress(), Consts.SEVER_LISTENING_PORT);
         return e;
     }
 }

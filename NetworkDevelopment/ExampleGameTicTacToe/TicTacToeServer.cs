@@ -22,7 +22,7 @@ public class sBatchHeader
 public class sBatchData
 {
     // How to board is, because its from the server
-    public TicTacToe Board;
+    public TicTacToe Board = new TicTacToe();
 
     // The number asociated with the player reciving this
     public int ReciverPlayerID;

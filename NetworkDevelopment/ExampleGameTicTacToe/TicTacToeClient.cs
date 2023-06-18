@@ -30,7 +30,7 @@ internal class TicTacToeClient
     // Networking
     private Client _client = new Client("Jack");
 
-    private TicTacToe _board;
+    private TicTacToe _board = new TicTacToe();
     private int _ourPlayerID;
 
     // Game logic
