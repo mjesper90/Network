@@ -20,17 +20,17 @@ namespace NetworkLib.GameClient
         public Guid Id;
         public Network NetworkHandler;
         public TcpClient Tcp;
+        public Guid _clientId = Guid.NewGuid();
 
         private IMatch _match;
         private SemaphoreSlim _semaphore = new SemaphoreSlim(1);
-        public Guid _clientId = Guid.NewGuid();
 
         private NetworkStream _tcpStream;
 
         public Client(ILogNetwork log, TcpClient socket, MessageFactory mf)
         {
             Id = Guid.NewGuid();
-            NetworkHandler = new Network(this);
+            NetworkHandler = new Network();
             Tcp = socket;
             Log = log;
             Tcp.ReceiveBufferSize = CONSTANTS.BufferSize;

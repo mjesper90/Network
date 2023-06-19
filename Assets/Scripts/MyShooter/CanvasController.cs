@@ -34,9 +34,13 @@ namespace MyShooter.UI
             _buttons = GetComponentsInChildren<Button>();
 
             LoginButton = _buttons[0];
+            LoginButton.onClick.AddListener(Login);
             QueueButton = _buttons[1];
+            QueueButton.onClick.AddListener(Queue);
             OptionsButton = _buttons[2];
+            OptionsButton.onClick.AddListener(Options);
             ExitButton = _buttons[3];
+            ExitButton.onClick.AddListener(Exit);
         }
 
         public void Login()

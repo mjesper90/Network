@@ -17,21 +17,6 @@ namespace NetworkLib.Common
             _log = log;
         }
 
-        public Message CreateMessage(string messageText)
-        {
-            return new Message(Serialize(messageText));
-        }
-
-        public Message CreateMessage(object messageObject)
-        {
-            return new Message(Serialize(messageObject));
-        }
-
-        public Message CreateMessage(byte[] messageData)
-        {
-            return new Message(messageData);
-        }
-
         public T Deserialize<T>(byte[] data)
         {
             try

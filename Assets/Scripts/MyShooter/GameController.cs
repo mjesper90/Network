@@ -16,6 +16,7 @@ namespace MyShooter.GameControl
 
         public Dictionary<string, GameObject> Players = new Dictionary<string, GameObject>();
         public Dictionary<string, GameObject> Projectiles = new Dictionary<string, GameObject>();
+        public Dictionary<string, GameObject> Targets = new Dictionary<string, GameObject>();
 
         //private Client _client;
         public Player LocalPlayer;
@@ -35,14 +36,20 @@ namespace MyShooter.GameControl
         public void Start()
         {
             _cam = Camera.main;
+
+#if UNITY_EDITOR
             InitServer();
+#else
             InitPlayer();
             InitClient();
+#endif
         }
 
         private void InitServer()
         {
-            Instantiate(Resources.Load(CONSTANTS.ServerPrefab), Vector3.zero, Quaternion.identity);
+            Instantiate(Resources.Load(CONSTANTS.ServerPrefab));
+            _cam.transform.localPosition = CONSTANTS.MyShooterServerCamOffset;
+            _cam.transform.rotation = Quaternion.Euler(90, 0, 0);
         }
 
         private void InitPlayer()
@@ -52,12 +59,13 @@ namespace MyShooter.GameControl
             LocalPlayer.IsLocal = true;
 
             _cam.transform.SetParent(go.transform);
-            _cam.transform.localPosition = CONSTANTS.CameraOffset;
+            _cam.transform.localPosition = CONSTANTS.MyShooterCameraOffset;
         }
 
         private void InitClient()
         {
-            Instantiate(Resources.Load(CONSTANTS.ClientPrefab), Vector3.zero, Quaternion.identity);
+            GameObject go = Instantiate(Resources.Load(CONSTANTS.ClientPrefab)) as GameObject;
+            go.GetComponent<ClientInit>().ConnectClient();
         }
 
         public void Update()
@@ -106,6 +114,31 @@ namespace MyShooter.GameControl
             else if (msg is PlayerJoined)
             {
                 Debug.Log("Player joined");
+            }
+            else if (msg is BulletSpawn)
+            {
+                BulletSpawn bs = msg as BulletSpawn;
+                Vector3 pos = new Vector3(bs.Position.X, bs.Position.Y, bs.Position.Z);
+                Vector3 dir = new Vector3(bs.Direction.X, bs.Direction.Y, bs.Direction.Z);
+                GameObject go = Instantiate(Resources.Load(CONSTANTS.ProjectilePrefab), pos, Quaternion.identity) as GameObject;
+                go.GetComponent<Rigidbody>().velocity = dir * CONSTANTS.ProjectileSpeed;
+            }
+            else if (msg is TargetSpawn)
+            {
+                TargetSpawn ts = msg as TargetSpawn;
+                Vector3 pos = new Vector3(ts.Position.X, ts.Position.Y, ts.Position.Z);
+                GameObject go = Instantiate(Resources.Load(CONSTANTS.TargetPrefab)) as GameObject;
+                go.transform.position = pos;
+                Targets.Add(ts.Id, go);
+            }
+            else if (msg is BulletCollision)
+            {
+                BulletCollision bc = msg as BulletCollision;
+                if (Targets.ContainsKey(bc.Id))
+                {
+                    Destroy(Targets[bc.Id]);
+                    Targets.Remove(bc.Id);
+                }
             }
             else
             {

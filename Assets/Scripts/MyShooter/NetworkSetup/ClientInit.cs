@@ -35,12 +35,7 @@ namespace MyShooter.NetworkSetup
             MsgFactory = new MessageFactory(new UnityLogger("MessageFactory::"), new BinaryFormatter());
         }
 
-        protected void FixedUpdate()
-        {
-            TryStarting();
-        }
-
-        private void TryStarting()
+        public void ConnectClient()
         {
             try
             {

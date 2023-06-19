@@ -8,16 +8,10 @@ namespace NetworkLib.GameClient
     public class Network
     {
         public Authentication Auth = null;
-        public Client Client;
         public bool InGame = false;
         public bool InQueue = false;
 
         private ConcurrentQueue<Message> _msgQueue = new ConcurrentQueue<Message>();
-
-        public Network(Client client)
-        {
-            Client = client;
-        }
 
         public void ClearQueue()
         {

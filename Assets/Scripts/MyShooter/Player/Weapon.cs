@@ -1,3 +1,5 @@
+using MyShooter.DTOs;
+using MyShooter.NetworkSetup;
 using UnityEngine;
 
 namespace MyShooter
@@ -13,13 +15,13 @@ namespace MyShooter
             _projectilePrefab = Resources.Load(CONSTANTS.ProjectilePrefab) as GameObject;
         }
 
-        public MonoProjectile PewPew(bool local = false)
+        public void PewPew(bool local = false)
         {
-            GameObject projectile = Instantiate(_projectilePrefab, Nozzle.position, Nozzle.rotation);
-            MonoProjectile p = projectile.GetComponent<MonoProjectile>();
-
-            p.Launch(local);
-            return p;
+            if (ClientInit.Instance != null && ClientInit.Instance.Client != null)
+            {
+                BulletSpawn b = new BulletSpawn(Nozzle.position.x, Nozzle.position.y, Nozzle.position.z, Nozzle.forward.x, Nozzle.forward.y, Nozzle.forward.z);
+                ClientInit.Instance.Client.Send(b);
+            }
         }
     }
 }

@@ -36,7 +36,7 @@ namespace NetworkLib.GameServer
         {
             foreach (IMatch match in Matches)
             {
-                match.Shutdown();
+                match.StopUpdateLoop();
             }
         }
 

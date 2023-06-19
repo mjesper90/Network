@@ -1,16 +1,16 @@
 using System;
+using System.Collections.Concurrent;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Threading.Tasks;
-using System.Collections.Concurrent;
-using NetworkLib.GameClient;
-using NetworkLib.Common;
-using NetworkLib.Common.Logger;
-using NetworkLib.Common.DTOs;
-using NetworkLib.Common.Interfaces;
-using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
+using System.Threading.Tasks;
+using NetworkLib.Common;
+using NetworkLib.Common.DTOs;
 using NetworkLib.Common.DTOs.MatchMaking;
+using NetworkLib.Common.Interfaces;
+using NetworkLib.Common.Logger;
+using NetworkLib.GameClient;
 
 namespace NetworkLib.GameServer
 {

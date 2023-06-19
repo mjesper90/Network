@@ -18,7 +18,7 @@ namespace NetworkLib.Common.DTOs
 
         public override string ToString()
         {
-            return "Vec3: " + X + ", " + Y + ", " + Z;
+            return "Vec3: (" + X + ", " + Y + ", " + Z + ")";
         }
     }
 }

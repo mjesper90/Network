@@ -13,7 +13,6 @@ namespace NetworkLib.Common.Interfaces
         Client[] GetClients();
         Message[] GetState();
         Task RemovePlayer(Client client);
-        void Shutdown();
         void StartUpdateLoop();
         void StopUpdateLoop();
     }

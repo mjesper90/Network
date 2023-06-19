@@ -8,6 +8,7 @@ namespace MyShooter
     {
         public string Username;
         public string MatchId;
+        public float Health;
         public bool IsLocal = false;
         public bool LoggedIn = false;
         public Weapon Weapon;
@@ -31,6 +32,7 @@ namespace MyShooter
             Weapon.transform.SetParent(transform);
             //Move weapon slightly
             Weapon.transform.localPosition = new Vector3(0.5f, 0f, 0f);
+            Health = CONSTANTS.PlayerHealth;
         }
 
         public void Update()
@@ -158,7 +160,7 @@ namespace MyShooter
         {
             if (Weapon != null && Input.GetMouseButtonDown(0))
             {
-                MonoProjectile p = Weapon.PewPew(true);
+                Weapon.PewPew(true);
             }
         }
     }
