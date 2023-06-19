@@ -50,6 +50,10 @@ namespace MyShooter.GameControl
             Instantiate(Resources.Load(CONSTANTS.ServerPrefab));
             _cam.transform.localPosition = CONSTANTS.MyShooterServerCamOffset;
             _cam.transform.rotation = Quaternion.Euler(90, 0, 0);
+            CanvasController.Instance.QueueButton.interactable = false;
+            CanvasController.Instance.LoginButton.interactable = false;
+            CanvasController.Instance.OptionsButton.interactable = false;
+            CanvasController.Instance.ExitButton.interactable = false;
         }
 
         private void InitPlayer()
