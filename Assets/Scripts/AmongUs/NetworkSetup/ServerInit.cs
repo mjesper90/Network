@@ -1,20 +1,20 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
-using MyShooter.DTOs;
-using MyShooter.Logging;
+using AmongUs.DTOs;
+using AmongUs.Logging;
 using NetworkLib.Common.DTOs;
 using NetworkLib.Common.DTOs.MatchMaking;
 using NetworkLib.GameServer;
 using UnityEngine;
 
-namespace MyShooter.NetworkSetup
+namespace AmongUs.NetworkSetup
 {
     public class ServerInit : MonoBehaviour
     {
         public Server Server;
         public List<Player> Players;
-        private ShooterMatch _match;
+        private AmongUsMatch _match;
 
         public static ServerInit Instance;
 
@@ -26,23 +26,12 @@ namespace MyShooter.NetworkSetup
             }
             else
             {
-                _match = new ShooterMatch();
+                _match = new AmongUsMatch();
+                Players = new List<Player>();
                 Server = new Server(new UnityLogger("Server::"), CONSTANTS.Port, _match);
                 Server.StartAcceptingClients();
                 Debug.Log("Server started");
                 Instance = this;
-                Players = new List<Player>();
-                //Spawn a couple of targets in the match
-                for (int i = 0; i < 10; i++)
-                {
-                    GameObject go = Instantiate(Resources.Load(CONSTANTS.TargetPrefab)) as GameObject;
-                    go.transform.position = new Vector3(UnityEngine.Random.Range(-50, 50), 0.5f, UnityEngine.Random.Range(-50, 50));
-                    go.name = "Target " + i;
-                    Target t = go.GetComponent<Target>();
-                    TargetSpawn ts = new TargetSpawn(go.transform.position.x, go.transform.position.y, go.transform.position.z);
-                    t.TargetSpawn = ts;
-                    _match.Targets.Add(ts.Id, ts);
-                }
             }
         }
 
@@ -85,28 +74,6 @@ namespace MyShooter.NetworkSetup
                 p.MatchId = pj.MatchId;
                 p.LoggedIn = true;
             }
-            else if (msg is BulletSpawn)
-            {
-                BulletSpawn bs = msg as BulletSpawn;
-                GameObject go = GameObject.Instantiate(Resources.Load(CONSTANTS.ProjectilePrefab), new Vector3(bs.Position.X, bs.Position.Y, bs.Position.Z), Quaternion.identity) as GameObject;
-                MonoProjectile mp = go.GetComponent<MonoProjectile>();
-                mp.BulletSpawn = bs;
-                go.GetComponent<Rigidbody>().velocity = new Vector3(bs.Direction.X, bs.Direction.Y, bs.Direction.Z) * CONSTANTS.ProjectileSpeed;
-                mp.OnCollision += HandleCollision;
-            }
-        }
-
-        private void HandleCollision(Collision col, MonoProjectile mp)
-        {
-            Debug.Log(mp.BulletSpawn.Id + " collided with " + col.gameObject.name);
-            if (col.gameObject.GetComponent<Target>() != null)
-            {
-                _ = _match.Broadcast(new BulletCollision(col.gameObject.GetComponent<Target>().TargetSpawn.Id));
-                // Remove the target from the match
-                Destroy(col.gameObject);
-            }
-            // Destroy the projectile
-            Destroy(mp.gameObject);
         }
 
         void OnApplicationQuit()

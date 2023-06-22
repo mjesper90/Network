@@ -20,13 +20,19 @@ public static class CONSTANTS
     public static readonly string ServerIP = "127.0.0.1";
     public static readonly int BufferSize = 4096;
 
-    //Prefabs
-    public static readonly string PlayerPrefab = "MyShooter/Prefabs/Player";
+    //MyShooter
+    public static readonly string MyShooterPlayerPrefab = "MyShooter/Prefabs/Player";
     public static readonly string ProjectilePrefab = "MyShooter/Prefabs/Projectile";
     public static readonly string WeaponPrefab = "MyShooter/Prefabs/Weapon";
     public static readonly string TargetPrefab = "MyShooter/Prefabs/Target";
-    public static readonly string ClientPrefab = "Network/Prefabs/Client";
-    public static readonly string ServerPrefab = "Network/Prefabs/Server";
+    public static readonly string MyShooterClientPrefab = "MyShooter/Prefabs/Client";
+    public static readonly string MyShooterServerPrefab = "MyShooter/Prefabs/Server";
+
+    //AmongUs
+    public static readonly string AmongUsPlayerPrefab = "AmongUs/Prefabs/Player";
+    public static readonly string AmongUsClientPrefab = "AmongUs/Prefabs/Client";
+    public static readonly string AmongUsServerPrefab = "AmongUs/Prefabs/Server";
+    public static readonly float AmongUsInteractDistance = 2f;
 
     //Matchmaking
     public static readonly int MaxPlayersPerMatch = 999;

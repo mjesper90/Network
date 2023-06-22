@@ -1,13 +1,12 @@
 using System;
 using System.Collections.Generic;
-using MyShooter.DTOs;
-using MyShooter.NetworkSetup;
-using MyShooter.UI;
+using AmongUs.DTOs;
+using AmongUs.NetworkSetup;
 using NetworkLib.Common.DTOs;
 using NetworkLib.Common.DTOs.MatchMaking;
 using UnityEngine;
 
-namespace MyShooter.GameControl
+namespace AmongUs.GameControl
 {
     public class GameController : MonoBehaviour
     {
@@ -15,8 +14,6 @@ namespace MyShooter.GameControl
         private Camera _cam;
 
         public Dictionary<string, GameObject> Players = new Dictionary<string, GameObject>();
-        public Dictionary<string, GameObject> Projectiles = new Dictionary<string, GameObject>();
-        public Dictionary<string, GameObject> Targets = new Dictionary<string, GameObject>();
 
         //private Client _client;
         public Player LocalPlayer;
@@ -39,36 +36,34 @@ namespace MyShooter.GameControl
 
 #if UNITY_EDITOR
             InitServer();
-#else
+
             InitPlayer();
             InitClient();
+#else
 #endif
         }
 
         private void InitServer()
         {
-            Instantiate(Resources.Load(CONSTANTS.MyShooterServerPrefab));
+            Instantiate(Resources.Load(CONSTANTS.AmongUsServerPrefab));
             _cam.transform.localPosition = CONSTANTS.MyShooterServerCamOffset;
             _cam.transform.rotation = Quaternion.Euler(90, 0, 0);
-            CanvasController.Instance.QueueButton.interactable = false;
-            CanvasController.Instance.LoginButton.interactable = false;
-            CanvasController.Instance.OptionsButton.interactable = false;
-            CanvasController.Instance.ExitButton.interactable = false;
         }
 
         private void InitPlayer()
         {
-            GameObject go = Instantiate(Resources.Load(CONSTANTS.MyShooterPlayerPrefab), new Vector3(0, 0.5f, 0), Quaternion.identity) as GameObject;
+            GameObject go = Instantiate(Resources.Load(CONSTANTS.AmongUsPlayerPrefab), new Vector3(0, 0.5f, 0), Quaternion.identity) as GameObject;
             LocalPlayer = go.GetComponent<Player>();
             LocalPlayer.IsLocal = true;
 
             _cam.transform.SetParent(go.transform);
             _cam.transform.localPosition = CONSTANTS.MyShooterCameraOffset;
+            _cam.transform.rotation = Quaternion.Euler(0, 0, 0);
         }
 
         private void InitClient()
         {
-            GameObject go = Instantiate(Resources.Load(CONSTANTS.MyShooterClientPrefab)) as GameObject;
+            GameObject go = Instantiate(Resources.Load(CONSTANTS.AmongUsClientPrefab)) as GameObject;
             go.GetComponent<ClientInit>().ConnectClient();
         }
 
@@ -89,8 +84,6 @@ namespace MyShooter.GameControl
             {
                 LocalPlayer.LoggedIn = true;
                 Players.Add(LocalPlayer.Username, LocalPlayer.gameObject);
-                CanvasController.Instance.QueueButton.interactable = true;
-                CanvasController.Instance.LoginButton.interactable = false;
             }
             else if (msg is PositionAndYRotation)
             {
@@ -100,11 +93,10 @@ namespace MyShooter.GameControl
             {
                 //Match found
                 LocalPlayer.MatchId = (msg as MatchMessage).MatchId;
-                CanvasController.Instance.QueueButton.interactable = false;
             }
             else if (msg is QueueMessage)
             {
-                CanvasController.Instance.QueueButton.interactable = false;
+
             }
             else if (msg is PlayerLeft)
             {
@@ -118,31 +110,6 @@ namespace MyShooter.GameControl
             else if (msg is PlayerJoined)
             {
                 Debug.Log("Player joined");
-            }
-            else if (msg is BulletSpawn)
-            {
-                BulletSpawn bs = msg as BulletSpawn;
-                Vector3 pos = new Vector3(bs.Position.X, bs.Position.Y, bs.Position.Z);
-                Vector3 dir = new Vector3(bs.Direction.X, bs.Direction.Y, bs.Direction.Z);
-                GameObject go = Instantiate(Resources.Load(CONSTANTS.ProjectilePrefab), pos, Quaternion.identity) as GameObject;
-                go.GetComponent<Rigidbody>().velocity = dir * CONSTANTS.ProjectileSpeed;
-            }
-            else if (msg is TargetSpawn)
-            {
-                TargetSpawn ts = msg as TargetSpawn;
-                Vector3 pos = new Vector3(ts.Position.X, ts.Position.Y, ts.Position.Z);
-                GameObject go = Instantiate(Resources.Load(CONSTANTS.TargetPrefab)) as GameObject;
-                go.transform.position = pos;
-                Targets.Add(ts.Id, go);
-            }
-            else if (msg is BulletCollision)
-            {
-                BulletCollision bc = msg as BulletCollision;
-                if (Targets.ContainsKey(bc.Id))
-                {
-                    Destroy(Targets[bc.Id]);
-                    Targets.Remove(bc.Id);
-                }
             }
             else
             {
@@ -159,8 +126,7 @@ namespace MyShooter.GameControl
                     if (pos.Username != LocalPlayer.Username)
                     {
                         Player p = Players[pos.Username].GetComponent<Player>();
-                        p.LerpMovement(new Vector3(pos.X, pos.Y, pos.Z));
-                        p.LerpRotation(pos.YRotation);
+                        p.LerpMovementAndRotation(new Vector3(pos.X, pos.Y, pos.Z), pos.YRotation);
                     }
                 }
                 else
