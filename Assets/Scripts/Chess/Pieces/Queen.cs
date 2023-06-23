@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Skak.Pieces
+namespace Chess.Pieces
 {
     public class Queen : Piece
     {

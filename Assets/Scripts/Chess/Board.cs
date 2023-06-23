@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Skak
+namespace Chess
 {
     public class Board : MonoBehaviour
     {
