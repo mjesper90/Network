@@ -2,17 +2,20 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Board : MonoBehaviour
+namespace Skak
 {
-    // Start is called before the first frame update
-    void Start()
+    public class Board : MonoBehaviour
     {
-        // Spawn in the different pieces
-    }
+        // Start is called before the first frame update
+        void Start()
+        {
+            // Spawn in the different pieces
+        }
 
-    // Update is called once per frame
-    void Update()
-    {
-        
+        // Update is called once per frame
+        void Update()
+        {
+
+        }
     }
 }
