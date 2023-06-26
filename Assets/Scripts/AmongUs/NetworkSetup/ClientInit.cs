@@ -43,6 +43,7 @@ namespace AmongUs.NetworkSetup
                 {
                     Client = new Client(new UnityLogger("Client::"), new TcpClient(IP, Port), MsgFactory);
                     Client.StartReceiving();
+                    SendLogin(GameController.Instance.LocalPlayer.Username, "password");
                     Debug.Log("Client started");
                     StartCoroutine(SendContinousPlayerData());
                 }
@@ -87,12 +88,12 @@ namespace AmongUs.NetworkSetup
 
         public void SendLogin(string username, string password)
         {
-            Client.Send(new Authentication(username, password));
+            _ = Client.SendAsync(new Authentication(username, password));
         }
 
         public void SendQueue()
         {
-            Client.Send(new QueueMessage());
+            _ = Client.SendAsync(new QueueMessage());
         }
     }
 }

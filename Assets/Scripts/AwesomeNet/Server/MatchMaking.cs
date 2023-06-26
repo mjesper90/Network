@@ -3,7 +3,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using NetworkLib.Common.DTOs;
 using NetworkLib.Common.DTOs.MatchMaking;
 using NetworkLib.Common.Interfaces;
 using NetworkLib.GameClient;
@@ -61,6 +60,22 @@ namespace NetworkLib.GameServer
                     await Task.Delay((int)(1000 * CONSTANTS.ServerSpeed));
                 }
             });
+        }
+
+        internal void Leave(Guid clientId)
+        {
+            foreach (IMatch match in Matches)
+            {
+                foreach (Client client in match.GetClients())
+                {
+                    if (client.Id == clientId)
+                    {
+                        match.RemovePlayer(client);
+                        client.NetworkHandler.InGame = false;
+                        client.NetworkHandler.InQueue = false;
+                    }
+                }
+            }
         }
     }
 }

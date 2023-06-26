@@ -1,6 +1,8 @@
 using UnityEngine;
-
-public interface Interactable
+namespace AmongUs
 {
-    void Interact(GameObject Interactor);
+    public interface Interactable
+    {
+        void Interact(GameObject Interactor);
+    }
 }

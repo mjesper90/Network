@@ -67,12 +67,24 @@ namespace AmongUs.NetworkSetup
             if (msg is PlayerJoined)
             {
                 PlayerJoined pj = msg as PlayerJoined;
-                GameObject go = GameObject.Instantiate(Resources.Load(CONSTANTS.MyShooterPlayerPrefab), new Vector3(0, 0.5f, 0), Quaternion.identity) as GameObject;
+                Debug.Log($"Player {pj.Username} joined");
+                GameObject go = GameObject.Instantiate(Resources.Load(CONSTANTS.AmongUsPlayerPrefab), new Vector3(0, 0.5f, 0), Quaternion.identity) as GameObject;
                 Player p = go.GetComponent<Player>();
                 Players.Add(p);
                 p.Username = pj.Username;
                 p.MatchId = pj.MatchId;
                 p.LoggedIn = true;
+            }
+            if (msg is PlayerLeft)
+            {
+                PlayerLeft pl = msg as PlayerLeft;
+                Debug.Log($"Player {pl.Username} left");
+                Player p = Players.Find(x => x.Username == pl.Username);
+                if (p != null)
+                {
+                    Players.Remove(p);
+                    Destroy(p.gameObject);
+                }
             }
         }
 

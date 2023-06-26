@@ -20,7 +20,7 @@ namespace AmongUs.DTOs
 
         public override string ToString()
         {
-            return "(" + X + ", " + Y + ", " + Z + "), Y-Rotation: " + YRotation;
+            return Username + " (" + X + ", " + Y + ", " + Z + "), Y-Rotation: " + YRotation;
         }
     }
 }
