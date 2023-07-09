@@ -6,7 +6,9 @@ namespace Chess
 {
     public class Board : MonoBehaviour
     {
-        // public List<Piece> ActivePieces = new List<Piece>();
+        public GameObject Selector;
+
+        public List<Pieces> ActivePieces = new List<Pieces>();
 
         // Start is called before the first frame update
         void Start()
@@ -26,31 +28,36 @@ namespace Chess
 
                 if (Physics.Raycast(ray, out hit))
                 {
-                    Vector3 vector3 = hit.point;
-
-                    int[] ints = Vector3ToTile(vector3);
-
-                    print(ints[0] + " " + ints[1]);
+                    CheckHit(hit);
                 }
             }
         }
 
-        /*public Piece CheckTile()
+        public void CheckHit(RaycastHit hit)
         {
-            // Check for if there is a piece on this tile and return said piece
+            Vector3 vector3 = hit.point;
 
-            return null;
-        }*/
+            int[] ints = Vector3ToTile(vector3);
+
+            if (0 <= ints[0] && ints[0] <= 7 && 0 <= ints[1] && ints[1] <= 7)
+            {
+                
+
+                Selector.transform.position = TileToVector(ints);
+
+
+            }
+        }
 
         public Vector3 TileToVector(int[] TileCoordinate)
         {
-            return new Vector3((float)TileCoordinate[0] * 1.14f, 0.01f, (float)TileCoordinate[1] * 1.14f);
+            return new Vector3((float)TileCoordinate[0] * 1.15f, 0.01f, (float)TileCoordinate[1] * 1.15f);
         }
 
         public int[] Vector3ToTile(Vector3 Position)
         {
-            int x = (int)Mathf.Round((Position.x / 1.14f) * 1f);
-            int z = (int)Mathf.Round((Position.z / 1.14f) * 1f);
+            int x = (int)Mathf.Round((Position.x / 1.15f) * 1f);
+            int z = (int)Mathf.Round((Position.z / 1.15f) * 1f);
 
             int[] Tile = new int[2] { x, z };
 
