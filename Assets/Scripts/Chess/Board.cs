@@ -8,7 +8,7 @@ namespace Chess
     {
         public GameObject Selector;
 
-        public List<Pieces> ActivePieces = new List<Pieces>();
+        public List<Piece> ActivePieces = new List<Piece>();
 
         // Start is called before the first frame update
         void Start()
