@@ -5,7 +5,7 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/AmongUs/Level1.unity
     guid: 3f0283da4d079c14681fc0bbca37fb46
   - enabled: 0
