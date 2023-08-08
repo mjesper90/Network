@@ -31,7 +31,7 @@ namespace NetworkLib.GameServer
                 .Select(c => c.SendAsync(new PlayerJoined(client.NetworkHandler.Auth.Username, _id.ToString())));
 
             _ = Task.WhenAll(tasks);
-            await client.SendAsync(new MatchMessage(_id.ToString()));
+            await client.SendAsync(new MatchMessage(_id.ToString(), _clients.Values.Select(c => c.NetworkHandler.Auth.Username).ToArray()));
         }
 
         public async Task Broadcast(Message msg)
@@ -61,9 +61,12 @@ namespace NetworkLib.GameServer
             return _lastMessages.Values.ToArray();
         }
 
-        public async Task RemovePlayer(Client client)
+        public virtual async Task RemovePlayer(Client client)
         {
+            Server.Log.Log("Match: Removed player " + client.NetworkHandler.Auth.Username);
             _clients.TryRemove(client.NetworkHandler.Auth.Username, out _);
+            //Remove player from last messages
+            _lastMessages.TryRemove(client.NetworkHandler.Auth.Username, out _);
 
             // Notify other clients in the match about the removed player
             IEnumerable<Task> tasks = _clients.Values

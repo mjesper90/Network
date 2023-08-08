@@ -94,6 +94,11 @@ namespace MyShooter.NetworkSetup
                 go.GetComponent<Rigidbody>().velocity = new Vector3(bs.Direction.X, bs.Direction.Y, bs.Direction.Z) * CONSTANTS.ProjectileSpeed;
                 mp.OnCollision += HandleCollision;
             }
+            else if (msg is PlayerLeft)
+            {
+                PlayerLeft pl = msg as PlayerLeft;
+                Players.Remove(Players.Find(p => p.Username == pl.Username));
+            }
         }
 
         private void HandleCollision(Collision col, MonoProjectile mp)

@@ -27,6 +27,13 @@ namespace MyShooter
             await client.SendAsync(Targets.Values.ToArray());
         }
 
+        public override async Task RemovePlayer(Client client)
+        {
+            await base.RemovePlayer(client);
+
+            UnityMessages.Enqueue(new PlayerLeft(client.NetworkHandler.Auth.Username, _id.ToString()));
+        }
+
         public override Message[] GetState()
         {
             List<Message> messages = new List<Message>();

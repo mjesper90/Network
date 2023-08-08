@@ -128,7 +128,7 @@ namespace NetworkLib.GameServer
             Log.Log("Client connected");
 
             await client.StartReceiving();
-
+            await _mm.Matches.ElementAt(0).RemovePlayer(client);
             _clients.TryRemove(client.Id, out _);
             Log.Log($"Client {client.NetworkHandler.Auth?.Username} disconnected");
         }
@@ -154,7 +154,7 @@ namespace NetworkLib.GameServer
 
                         foreach (Message msg in client.NetworkHandler.DequeueAll())
                         {
-                            await ProcessMessage(client, msg);
+                            await HandleLoginAndQueue(client, msg);
                         }
                     }
                     else
@@ -166,6 +166,7 @@ namespace NetworkLib.GameServer
 
                 foreach (Guid clientId in disconnectedClientIds)
                 {
+                    _mm.Leave(clientId);
                     _clients.TryRemove(clientId, out _);
                 }
             }
@@ -175,12 +176,12 @@ namespace NetworkLib.GameServer
             }
         }
 
-        protected async Task ProcessMessage(Client client, Message msg)
+        protected async Task HandleLoginAndQueue(Client client, Message msg)
         {
             if (msg is Authentication && client.NetworkHandler.Auth == null)
             {
-                //client.NetworkHandler.Auth = client.MsgFactory.Deserialize<Authentication>(msg.Data);
                 client.NetworkHandler.Auth = msg as Authentication;
+                //Check login or just assume it's correct?
                 Log.Log($"User {client.NetworkHandler.Auth.Username} logged in");
                 _ = client.SendAsync(new LoginResponse(true, "Login successful"));
             }

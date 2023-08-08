@@ -11,23 +11,16 @@ namespace AmongUs.GameControl
     public class GameController : MonoBehaviour
     {
         public static GameController Instance;
-        private Camera _cam;
-
-        public Dictionary<string, GameObject> Players = new Dictionary<string, GameObject>();
 
         //private Client _client;
         public Player LocalPlayer;
 
+        public Dictionary<string, GameObject> Players = new Dictionary<string, GameObject>();
+        private Camera _cam;
+
         public void Awake()
         {
-            if (Instance != null && Instance != this)
-            {
-                Destroy(this);
-            }
-            else
-            {
-                Instance = this;
-            }
+            Instance = this;
         }
 
         public void Start()
@@ -36,35 +29,11 @@ namespace AmongUs.GameControl
 
 #if UNITY_EDITOR
             InitServer();
-
+#else
             InitPlayer();
             InitClient();
-#else
+
 #endif
-        }
-
-        private void InitServer()
-        {
-            Instantiate(Resources.Load(CONSTANTS.AmongUsServerPrefab));
-            _cam.transform.localPosition = CONSTANTS.MyShooterServerCamOffset;
-            _cam.transform.rotation = Quaternion.Euler(90, 0, 0);
-        }
-
-        private void InitPlayer()
-        {
-            GameObject go = Instantiate(Resources.Load(CONSTANTS.AmongUsPlayerPrefab), new Vector3(0, 0.5f, 0), Quaternion.identity) as GameObject;
-            LocalPlayer = go.GetComponent<Player>();
-            LocalPlayer.IsLocal = true;
-
-            _cam.transform.SetParent(go.transform);
-            _cam.transform.localPosition = CONSTANTS.MyShooterCameraOffset;
-            _cam.transform.rotation = Quaternion.Euler(0, 0, 0);
-        }
-
-        private void InitClient()
-        {
-            GameObject go = Instantiate(Resources.Load(CONSTANTS.AmongUsClientPrefab)) as GameObject;
-            go.GetComponent<ClientInit>().ConnectClient();
         }
 
         public void Update()
@@ -84,6 +53,7 @@ namespace AmongUs.GameControl
             {
                 LocalPlayer.LoggedIn = true;
                 Players.Add(LocalPlayer.Username, LocalPlayer.gameObject);
+                ClientInit.Instance.SendQueue();
             }
             else if (msg is PositionAndYRotation)
             {
@@ -91,12 +61,19 @@ namespace AmongUs.GameControl
             }
             else if (msg is MatchMessage)
             {
-                //Match found
-                LocalPlayer.MatchId = (msg as MatchMessage).MatchId;
+                MatchMessage mm = msg as MatchMessage;
+                LocalPlayer.MatchId = mm.MatchId;
+                foreach (string username in mm.Usernames)
+                {
+                    if (!Players.ContainsKey(username))
+                    {
+                        SpawnRemotePlayer(username);
+                    }
+                }
             }
             else if (msg is QueueMessage)
             {
-
+                //Queue prly accepted, ignore
             }
             else if (msg is PlayerLeft)
             {
@@ -109,7 +86,8 @@ namespace AmongUs.GameControl
             }
             else if (msg is PlayerJoined)
             {
-                Debug.Log("Player joined");
+                PlayerJoined pj = msg as PlayerJoined;
+                SpawnRemotePlayer(pj.Username);
             }
             else
             {
@@ -117,8 +95,34 @@ namespace AmongUs.GameControl
             }
         }
 
+        private void InitClient()
+        {
+            GameObject go = Instantiate(Resources.Load(CONSTANTS.AmongUsClientPrefab)) as GameObject;
+            go.GetComponent<ClientInit>().ConnectClient();
+        }
+
+        private void InitPlayer()
+        {
+            GameObject go = Instantiate(Resources.Load(CONSTANTS.AmongUsPlayerPrefab), new Vector3(0, 0.5f, 0), Quaternion.identity) as GameObject;
+            LocalPlayer = go.GetComponent<Player>();
+            LocalPlayer.IsLocal = true;
+            LocalPlayer.Username = new System.Random().Next(0, 100000).ToString();
+
+            _cam.transform.SetParent(go.transform);
+            _cam.transform.localPosition = CONSTANTS.MyShooterCameraOffset;
+            _cam.transform.rotation = Quaternion.Euler(0, 0, 0);
+        }
+
+        private void InitServer()
+        {
+            Instantiate(Resources.Load(CONSTANTS.AmongUsServerPrefab));
+            _cam.transform.localPosition = CONSTANTS.MyShooterServerCamOffset;
+            _cam.transform.rotation = Quaternion.Euler(90, 0, 0);
+        }
+
         private void PlayerPositionReceived(PositionAndYRotation pos)
         {
+            Debug.Log(pos);
             try
             {
                 if (Players.ContainsKey(pos.Username))
@@ -131,7 +135,7 @@ namespace AmongUs.GameControl
                 }
                 else
                 {
-                    SpawnNewPlayer(pos);
+                    Debug.LogWarning("Player not found " + pos.Username);
                 }
             }
             catch (Exception e)
@@ -140,12 +144,15 @@ namespace AmongUs.GameControl
             }
         }
 
-        private void SpawnNewPlayer(PositionAndYRotation posAndYRotation)
+        private void SpawnRemotePlayer(string username)
         {
-            GameObject go = Instantiate(Resources.Load(CONSTANTS.MyShooterPlayerPrefab), new Vector3(posAndYRotation.X, posAndYRotation.Y, posAndYRotation.Z), Quaternion.identity) as GameObject;
-            Players.Add(posAndYRotation.Username, go);
-            Player p = go.GetComponent<Player>();
-            p.Username = posAndYRotation.Username;
+            if (!Players.ContainsKey(username))
+            {
+                GameObject go = Instantiate(Resources.Load(CONSTANTS.AmongUsPlayerPrefab), new Vector3(0, 0.5f, 0), Quaternion.identity) as GameObject;
+                Player p = go.GetComponent<Player>();
+                p.Username = username;
+                Players.Add(username, go);
+            }
         }
     }
 }
