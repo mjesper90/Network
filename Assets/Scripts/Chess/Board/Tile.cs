@@ -13,29 +13,30 @@ namespace Chess
         // Initialize is called from Board
         public void Initialize(int x, int y)
         {
+            _color = Color.white;
             if (x % 2 == 0)
             {
                 if (y % 2 == 0)
                 {
-                    GetComponent<Renderer>().material.color = Color.white;
+                    _color = Color.white;
                 }
                 else
                 {
-                    GetComponent<Renderer>().material.color = Color.black;
+                    _color = Color.black;
                 }
             }
             else
             {
                 if (y % 2 == 0)
                 {
-                    GetComponent<Renderer>().material.color = Color.black;
+                    _color = Color.black;
                 }
                 else
                 {
-                    GetComponent<Renderer>().material.color = Color.white;
+                    _color = Color.white;
                 }
             }
-
+            GetComponent<Renderer>().material.color = _color;
             transform.position = new Vector3(x, 0, y);
             _x = x;
             _y = y;

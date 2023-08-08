@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace Chess
 {
-    public class Board : MonoBehaviour
+    public class Board : MonoBehaviour //, IBoard
     {
         public GameObject Selector;
         public List<Tile> Tiles;
