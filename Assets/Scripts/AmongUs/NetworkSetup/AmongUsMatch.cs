@@ -23,16 +23,27 @@ namespace AmongUs
             UnityMessages.Enqueue(new PlayerJoined(client.NetworkHandler.Auth.Username, _id.ToString()));
         }
 
+        public override async Task RemovePlayer(Client client)
+        {
+            await base.RemovePlayer(client);
+
+            UnityMessages.Enqueue(new PlayerLeft(client.NetworkHandler.Auth.Username, _id.ToString()));
+            PlayerPositions.TryRemove(client.NetworkHandler.Auth.Username, out _);
+        }
+
         public override Message[] GetState()
         {
             List<Message> messages = new List<Message>();
-            messages.AddRange(PlayerPositions.Values);
+            foreach (KeyValuePair<string, PositionAndYRotation> kvp in PlayerPositions)
+            {
+                messages.Add(kvp.Value);
+            }
             return messages.ToArray();
         }
 
         protected override async Task ProcessMessage(Message msg, Client client)
         {
-            Server.Log.Log($"AmongUsMatch processing message type {msg.GetType().Name} from {client.NetworkHandler.Auth.Username}");
+            //Server.Log.Log($"AmongUsMatch processing message type {msg.GetType().Name} from {client.NetworkHandler.Auth.Username}");
             string username = client.NetworkHandler.Auth.Username;
             if (msg is PositionAndYRotation) // Position and rotation update
             {

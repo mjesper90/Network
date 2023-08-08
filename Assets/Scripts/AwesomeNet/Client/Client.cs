@@ -42,6 +42,7 @@ namespace NetworkLib.GameClient
         public void Disconnect()
         {
             Log.Log("Client disconnected");
+            _match?.RemovePlayer(this);
             Tcp?.Close();
             Tcp = null;
             _tcpStream = null;
@@ -114,14 +115,12 @@ namespace NetworkLib.GameClient
                         {
                             Log.LogWarning("Received empty data - Disconnecting");
                             Disconnect();
-                            break;
                         }
                     }
                     else
                     {
                         Log.Log("Received 0 bytes - Disconnecting");
                         Disconnect();
-                        break;
                     }
                 }
             }
@@ -134,7 +133,6 @@ namespace NetworkLib.GameClient
             {
                 Log.LogWarning($"IOException while receiving TCP data: {e}");
                 Disconnect();
-                throw;
             }
             catch (Exception e)
             {
@@ -192,7 +190,6 @@ namespace NetworkLib.GameClient
             {
                 // Handle the exception appropriately, e.g., log the error, retry, or notify the caller
                 Log.LogError($"Error sending data: {e}");
-                Disconnect();
             }
             finally
             {

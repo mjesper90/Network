@@ -1,58 +1,12 @@
-using System;
 using System.Collections;
-using AmongUs.GameControl;
+using AmongUs.Players;
 using UnityEngine;
 
 namespace AmongUs
 {
-    public class Player : MonoBehaviour
+    public class Player : APlayer
     {
-        public string Username;
-        public string MatchId;
-        public bool IsLocal = false;
-        public bool LoggedIn = false;
-
-        private Rigidbody _rb;
-
-        public void Awake()
-        {
-            _rb = GetComponent<Rigidbody>();
-        }
-
-        public void Update()
-        {
-            if (IsLocal)
-            {
-                Movement();
-                Rotation();
-                Interact();
-            }
-        }
-
-        //Lerp movement
-        public void LerpMovementAndRotation(Vector3 vector3, float y)
-        {
-            StartCoroutine(LerpMovementAndRotationCoroutine(vector3, y, CONSTANTS.ServerSpeed));
-        }
-
-        //Lerp movement coroutine
-        private IEnumerator LerpMovementAndRotationCoroutine(Vector3 vector3, float y, float time)
-        {
-            float elapsedTime = 0;
-            Vector3 startingPos = transform.position;
-            Quaternion startingRot = transform.rotation;
-            while (elapsedTime < time)
-            {
-                transform.position = Vector3.Lerp(startingPos, vector3, (elapsedTime / time));
-                transform.rotation = Quaternion.Lerp(startingRot, Quaternion.Euler(0, y, 0), (elapsedTime / time));
-                elapsedTime += Time.deltaTime;
-                yield return new WaitForEndOfFrame();
-            }
-            transform.position = vector3;
-            transform.rotation = Quaternion.Euler(0, y, 0);
-        }
-
-        private void Movement()
+        protected override void Movement()
         {
             //WASD Movement
             Vector3 movement = Vector3.zero;
@@ -77,7 +31,7 @@ namespace AmongUs
             _rb.velocity = new Vector3(movement.x, 0, movement.z);
         }
 
-        private void Interact()
+        protected override void Interact()
         {
             //Interact with object
             if (Input.GetKeyDown(KeyCode.E))
@@ -85,16 +39,29 @@ namespace AmongUs
                 RaycastHit hit;
                 if (Physics.Raycast(transform.position, transform.forward, out hit, CONSTANTS.AmongUsInteractDistance))
                 {
-                    hit.transform.gameObject.GetComponent<Interactable>()?.Interact(gameObject);
+                    //Check for self hit
+                    if (hit.transform.gameObject == gameObject)
+                    {
+                        return;
+                    }
+                    else
+                    {
+                        hit.transform.gameObject.GetComponent<Interactable>()?.Interact(gameObject);
+                    }
                 }
             }
         }
 
-        private void Rotation()
+        protected override void Rotation()
         {
             //Rotate transform with mouse
             float mouseX = Input.GetAxis("Mouse X");
             transform.Rotate(Vector3.up * mouseX);
+        }
+
+        public override void Interact(GameObject Interactor)
+        {
+            Debug.Log("Interacted with " + gameObject.name + " by " + Interactor.name);
         }
     }
 }

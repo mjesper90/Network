@@ -7,10 +7,12 @@ namespace NetworkLib.Common.DTOs.MatchMaking
     public class MatchMessage : Message
     {
         public string MatchId { get; }
+        public string[] Usernames { get; set; }
 
-        public MatchMessage(string matchId)
+        public MatchMessage(string matchId, string[] usernames)
         {
             MatchId = matchId;
+            Usernames = usernames;
         }
     }
 }

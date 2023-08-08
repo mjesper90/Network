@@ -18,7 +18,10 @@ namespace MyShooter
         public void Awake()
         {
             _rb = GetComponent<Rigidbody>();
+        }
 
+        public void Start()
+        {
             if (GameController.Instance.Players.Count == 0)
             {
             }
