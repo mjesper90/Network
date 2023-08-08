@@ -6,25 +6,18 @@ namespace Chess.Pieces
 {
     public class Queen : Piece
     {
-        public override List<int[]> PossibleMoves()
+        public override List<Tile> PossibleMoves()
         {
-            List<int[]> moves = new List<int[]>();
+            List<Tile> moves = new List<Tile>();
             
 
 
             return moves;
         }
 
-        // Start is called before the first frame update
-        void Start()
+        public override void MoveTo(Tile tile)
         {
-
-        }
-
-        // Update is called once per frame
-        void Update()
-        {
-
+            throw new System.NotImplementedException();
         }
     }
 }
