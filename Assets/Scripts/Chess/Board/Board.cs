@@ -11,7 +11,27 @@ namespace Chess
         public GameObject Selector;
         public List<Tile> Tiles;
 
+        /* Piece value:
+        0: Blank
+        1: Pawn
+        2: Rook
+        3: Knight
+        4: Bishop
+        5: Queen
+        6: King */
         public List<GameObject> PiecePrefabs = new List<GameObject>();
+
+        public static int[,] StandardSetup = new int[8, 8]
+        {
+            {2, 3, 4, 5, 6, 4, 3, 2},
+            {1, 1, 1, 1, 1, 1, 1, 1},
+            {0, 0, 0, 0, 0, 0, 0, 0},
+            {0, 0, 0, 0, 0, 0, 0, 0},
+            {0, 0, 0, 0, 0, 0, 0, 0},
+            {0, 0, 0, 0, 0, 0, 0, 0},
+            {1, 1, 1, 1, 1, 1, 1, 1},
+            {2, 3, 4, 5, 6, 4, 3, 2}
+        };
 
         public List<Piece> ActivePieces = new List<Piece>();
 
@@ -29,26 +49,10 @@ namespace Chess
                     Tiles.Add(go.GetComponent<Tile>());
                 }
             }
+
+            
         }
-
-
-        public void StartPosition(int owner)
-        {
-            SetupPiece(4, 4, 0, owner);
-
-            for (int i = 0; i < 8; i++)
-            {
-                SetupPiece(0, i, 1, owner);
-            }
-        }
-
-        /* Piece value:
-        0: Pawn
-        1: Rook
-        2: Knight
-        3: Bishop
-        4: Queen
-        5: King */
+        
         public void SetupPiece(int value, int x, int y, int owner)
         {
             GameObject piece = Instantiate(PiecePrefabs[value]);
