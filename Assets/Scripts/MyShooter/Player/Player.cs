@@ -42,6 +42,14 @@ namespace MyShooter
         {
             if (IsLocal)
             {
+                Shoot();
+            }
+        }
+
+        void FixedUpdate()
+        {
+            if (IsLocal)
+            {
                 //Check if player is grounded
                 if (transform.position.y <= 0.5f)
                 {
@@ -51,7 +59,7 @@ namespace MyShooter
                 {
                     _rb.AddForce(Vector3.down * CONSTANTS.Gravity * Time.deltaTime * _rb.mass, ForceMode.Acceleration);
                 }
-                Shoot();
+
                 Movement();
                 Rotation();
             }
