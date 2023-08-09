@@ -59,7 +59,7 @@ namespace Chess
                     GameObject go = Instantiate(Resources.Load<GameObject>(CONSTANTS.ChessTilePrefab));
                     go.name = $"Tile {i}, {j}";
                     go.transform.parent = tileParent.transform;
-                    go.GetComponent<Tile>().Initialize(i, j);
+                    go.GetComponent<Tile>().Initialize(i, j, this);
                     Tiles[i, j] = go.GetComponent<Tile>();
                 }
             }
@@ -67,7 +67,6 @@ namespace Chess
 
         private void SpawnPieces()
         {
-            // Spawn pieces
             for (int i = 0; i < 8; i++)
             {
                 for (int j = 0; j < 8; j++)
@@ -76,11 +75,17 @@ namespace Chess
 
                     if (value != 0)
                     {
+                        // Spawn piece
                         GameObject go = Instantiate(PiecePrefabs[value - 1]);
                         Player owner = (i < 4) ? GameController.Instance.WhitePlayer : GameController.Instance.BlackPlayer;
                         go.transform.parent = owner.transform;
+
+                        // Set piece owner
                         Piece p = go.GetComponent<Piece>();
+                        p.Owner = owner;
                         owner.Pieces.Add(p);
+
+                        // Set piece tile
                         Tile tile = Tiles[i, j];
                         tile.SetPiece(p);
                     }

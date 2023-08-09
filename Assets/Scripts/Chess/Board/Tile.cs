@@ -1,5 +1,7 @@
 using UnityEngine;
 using Chess.Pieces;
+using System;
+
 
 namespace Chess
 {
@@ -8,10 +10,12 @@ namespace Chess
         private int _x, _y;
         private Color _color;
         public Piece _piece;
+        public Board Board;
 
         // Initialize is called from Board
-        public void Initialize(int x, int y)
+        public void Initialize(int x, int y, Board board)
         {
+            this.Board = board;
             _color = Color.black;
             if (x % 2 == 0)
             {
@@ -41,6 +45,11 @@ namespace Chess
             _y = y;
         }
 
+        public Tuple<int, int> GetCoordinates()
+        {
+            return new Tuple<int, int>(_x, _y);
+        }
+
         void OnMouseDown()
         {
             GameController.Instance.ClickedTile = this;
@@ -53,8 +62,10 @@ namespace Chess
         public void SetPiece(Piece piece)
         {
             _piece = piece;
-            _piece.CurrentTile = this;
-            _piece.MoveTo(this);
+            if (_piece != null)
+            {
+                _piece.MoveTo(this);
+            }
         }
 
         public Piece GetPiece()

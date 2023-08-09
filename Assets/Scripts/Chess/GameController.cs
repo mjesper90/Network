@@ -30,10 +30,35 @@ namespace Chess
         public void Start()
         {
             WhitePlayer = Instantiate(Resources.Load<GameObject>(CONSTANTS.ChessPlayerPrefab)).GetComponent<Player>();
+            WhitePlayer.gameObject.name = "White Player";
             BlackPlayer = Instantiate(Resources.Load<GameObject>(CONSTANTS.ChessPlayerPrefab)).GetComponent<Player>();
+            BlackPlayer.gameObject.name = "Black Player";
             Board b = Instantiate(Resources.Load<GameObject>(CONSTANTS.ChessBoardPrefab)).GetComponent<Board>();
             Boards.Add(b);
             b.Initialize();
+        }
+
+        public void Update()
+        {
+            if (SelectedPiece != null)
+            {
+                if (Input.GetMouseButtonDown(1))
+                {
+                    Debug.Log("Right click while holding a piece");
+                }
+                else if (Input.GetMouseButtonDown(0))
+                {
+                    Debug.Log("Left click while holding a piece");
+                }
+
+                if (ClickedTile != null && ClickedTile != SelectedPiece.CurrentTile)
+                {
+                    if (SelectedPiece.PossibleMoves().Contains(ClickedTile))
+                    {
+                        SelectedPiece.MoveTo(ClickedTile);
+                    }
+                }
+            }
         }
 
         public void EndTurn()

@@ -6,12 +6,18 @@ namespace Chess.Pieces
 {
     public abstract class Piece : MonoBehaviour, Moveable
     {
+        public Player Owner = null;
         public Tile CurrentTile = null;
 
         public abstract List<Tile> PossibleMoves();
         public virtual void MoveTo(Tile tile)
         {
-            StartCoroutine(lerpMovement(transform.position, tile, 1f));
+            if (tile != null)
+            {
+                if (CurrentTile != null) CurrentTile.SetPiece(null);
+                CurrentTile = tile;
+                StartCoroutine(lerpMovement(transform.position, tile, 1f));
+            }
         }
 
         IEnumerator lerpMovement(Vector3 start, Tile tile, float speed)
