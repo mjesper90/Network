@@ -7,9 +7,7 @@ namespace Chess
     {
         private int _x, _y;
         private Color _color;
-        private Piece _piece;
-        public Player Owner = null;
-
+        public Piece _piece;
 
         // Initialize is called from Board
         public void Initialize(int x, int y)
@@ -45,28 +43,18 @@ namespace Chess
 
         void OnMouseDown()
         {
-            if (_piece == null)
+            GameController.Instance.ClickedTile = this;
+            if (_piece != null)
             {
-                GetComponent<Renderer>().material.color = Color.red;
+                GameController.Instance.SelectedPiece = _piece;
             }
-
-            if (true == true)
-            {
-
-            }
-
-            GameController.Instance.SelectedPiece = GetPiece();
-
-            GetComponent<Renderer>().material.color = Color.green;
-
-
         }
 
         public void SetPiece(Piece piece)
         {
             _piece = piece;
-            Piece p = piece.GetComponent<Piece>();
-            p.MoveTo(this);
+            _piece.CurrentTile = this;
+            _piece.MoveTo(this);
         }
 
         public Piece GetPiece()

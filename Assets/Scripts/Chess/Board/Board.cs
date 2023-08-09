@@ -57,6 +57,7 @@ namespace Chess
                 for (int j = 0; j < 8; j++)
                 {
                     GameObject go = Instantiate(Resources.Load<GameObject>(CONSTANTS.ChessTilePrefab));
+                    go.name = $"Tile {i}, {j}";
                     go.transform.parent = tileParent.transform;
                     go.GetComponent<Tile>().Initialize(i, j);
                     Tiles[i, j] = go.GetComponent<Tile>();

@@ -10,6 +10,7 @@ namespace Chess
         public static GameController Instance;
 
         public Piece SelectedPiece;
+        public Tile ClickedTile;
         public Player WhitePlayer;
         public Player BlackPlayer;
 

@@ -6,6 +6,8 @@ namespace Chess.Pieces
 {
     public abstract class Piece : MonoBehaviour, Moveable
     {
+        public Tile CurrentTile = null;
+
         public abstract List<Tile> PossibleMoves();
         public virtual void MoveTo(Tile tile)
         {
