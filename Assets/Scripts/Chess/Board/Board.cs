@@ -8,8 +8,7 @@ namespace Chess
 {
     public class Board : MonoBehaviour //, IBoard
     {
-        public GameObject Selector;
-        public static Tile[,] Tiles = new Tile[8, 8];
+        public Tile[,] Tiles = new Tile[8, 8];
 
         /* Piece value:
         0: Blank
@@ -39,22 +38,35 @@ namespace Chess
         // This method is called from GameController
         public void Initialize()
         {
+            SpawnTiles();
+            SpawnPieces();
+        }
+
+        public void ResetBoard()
+        {
+            throw new NotImplementedException();
+        }
+
+        private void SpawnTiles()
+        {
+            // Create tile parent
+            GameObject tileParent = new GameObject("Tiles");
+            tileParent.transform.parent = transform;
             for (int i = 0; i < 8; i++)
             {
                 for (int j = 0; j < 8; j++)
                 {
                     GameObject go = Instantiate(Resources.Load<GameObject>(CONSTANTS.ChessTilePrefab));
-                    go.transform.parent = transform;
+                    go.transform.parent = tileParent.transform;
                     go.GetComponent<Tile>().Initialize(i, j);
                     Tiles[i, j] = go.GetComponent<Tile>();
                 }
             }
-
-            SpawnPieces();
         }
 
-        public void SpawnPieces()
+        private void SpawnPieces()
         {
+            // Spawn pieces
             for (int i = 0; i < 8; i++)
             {
                 for (int j = 0; j < 8; j++)
@@ -63,18 +75,16 @@ namespace Chess
 
                     if (value != 0)
                     {
-                        GameObject piece = Instantiate(PiecePrefabs[value]);
-                        Piece p = piece.GetComponent<Piece>();
+                        GameObject go = Instantiate(PiecePrefabs[value - 1]);
+                        Player owner = (i < 4) ? GameController.Instance.WhitePlayer : GameController.Instance.BlackPlayer;
+                        go.transform.parent = owner.transform;
+                        Piece p = go.GetComponent<Piece>();
+                        owner.Pieces.Add(p);
                         Tile tile = Tiles[i, j];
                         tile.SetPiece(p);
                     }
                 }
             }
-        }
-
-        public void SetupPiece(int value, int x, int y, Player owner)
-        {
-            GameObject piece = Instantiate(PiecePrefabs[value]);
         }
     }
 }

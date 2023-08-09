@@ -7,23 +7,32 @@ namespace Chess
 {
     public class GameController : MonoBehaviour
     {
-        public static Piece SelectedPiece;
+        public static GameController Instance;
+
+        public Piece SelectedPiece;
         public Player WhitePlayer;
         public Player BlackPlayer;
-        
+
         /* true = white, false = black */
         public bool WhitesTurn = false;
 
-        private Board _board;
+        public List<Board> Boards = new List<Board>();
+
+        public void Awake()
+        {
+            if (Instance == null)
+            {
+                Instance = this;
+            }
+        }
 
         public void Start()
         {
-            _board = Instantiate(Resources.Load<GameObject>(CONSTANTS.ChessBoardPrefab)).GetComponent<Board>();
-            _board.Initialize();
-
-            /*WhitePlayer = Instantiate(Resources.Load<GameObject>(CONSTANTS.ChessPlayerPrefab)).GetComponent<Player>();
-
-            BlackPlayer = Instantiate(Resources.Load<GameObject>(CONSTANTS.ChessPlayerPrefab)).GetComponent<Player>();*/
+            WhitePlayer = Instantiate(Resources.Load<GameObject>(CONSTANTS.ChessPlayerPrefab)).GetComponent<Player>();
+            BlackPlayer = Instantiate(Resources.Load<GameObject>(CONSTANTS.ChessPlayerPrefab)).GetComponent<Player>();
+            Board b = Instantiate(Resources.Load<GameObject>(CONSTANTS.ChessBoardPrefab)).GetComponent<Board>();
+            Boards.Add(b);
+            b.Initialize();
         }
 
         public void EndTurn()

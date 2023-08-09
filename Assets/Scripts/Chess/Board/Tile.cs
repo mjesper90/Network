@@ -8,6 +8,7 @@ namespace Chess
         private int _x, _y;
         private Color _color;
         private Piece _piece;
+        public Player Owner = null;
 
 
         // Initialize is called from Board
@@ -54,7 +55,7 @@ namespace Chess
 
             }
 
-            GameController.SelectedPiece = GetPiece();
+            GameController.Instance.SelectedPiece = GetPiece();
 
             GetComponent<Renderer>().material.color = Color.green;
 
@@ -65,8 +66,7 @@ namespace Chess
         {
             _piece = piece;
             Piece p = piece.GetComponent<Piece>();
-            GameObject go2 = p.gameObject;
-            go2.transform.position = transform.position + new Vector3(0.5f, 0, 0.5f);
+            p.MoveTo(this);
         }
 
         public Piece GetPiece()

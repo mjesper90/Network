@@ -27,13 +27,13 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5593087261610058194}
+  serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 4.03, y: 0.1, z: 4.03}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 0.1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &5593087261610057775
 MeshFilter:
@@ -119,9 +119,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5dfd498fc05034a49b88cda8b8b716a8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Selector: {fileID: 0}
   PiecePrefabs:
-  - {fileID: 8863527292054762111, guid: d5ee8eeec8ab71e4da5a74e9d96cc766, type: 3}
   - {fileID: 1048428482346986882, guid: 0e9cc9d57cd86d547b64a8ced8d63c85, type: 3}
   - {fileID: 5875529180558880068, guid: 9c88d3d4f9ea35e4194da0f223201cd9, type: 3}
   - {fileID: 5875529180558880068, guid: 4e9ab3bdce057b84a8db086b329b06de, type: 3}

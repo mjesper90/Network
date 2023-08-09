@@ -14,10 +14,5 @@ namespace Chess.Pieces
 
             return moves;
         }
-
-        public override void MoveTo(Tile tile)
-        {
-            throw new System.NotImplementedException();
-        }
     }
 }
