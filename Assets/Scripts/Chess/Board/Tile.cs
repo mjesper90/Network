@@ -37,24 +37,45 @@ namespace Chess
                 }
             }
             GetComponent<Renderer>().material.color = _color;
-            transform.position = new Vector3(x, 0, y);
+            transform.position = new Vector3((float)x, 0.2f, (float)y);
             _x = x;
             _y = y;
         }
 
         void OnMouseDown()
         {
-            Debug.Log("Tile clicked at coordinate (" + _x + ", " + _y + ")");
+            if (_piece == null)
+            {
+                GetComponent<Renderer>().material.color = Color.red;
+            }
+
+            if (true == true)
+            {
+
+            }
+
+            GameController.SelectedPiece = GetPiece();
+
+            GetComponent<Renderer>().material.color = Color.green;
+
+
         }
 
         public void SetPiece(Piece piece)
         {
             _piece = piece;
+
+            piece.transform.position = transform.position + new Vector3(0.5f, 0, 0.5f);
         }
 
         public Piece GetPiece()
         {
             return _piece;
+        }
+
+        public void RemovePiece()
+        {
+            _piece = null;
         }
 
         public void ChangeColor()

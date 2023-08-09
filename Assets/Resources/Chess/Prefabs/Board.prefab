@@ -93,9 +93,17 @@ MeshCollider:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5593087261610058194}
   m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
   m_IsTrigger: 0
+  m_ProvidesContacts: 0
   m_Enabled: 0
-  serializedVersion: 4
+  serializedVersion: 5
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
@@ -112,12 +120,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Selector: {fileID: 0}
-  Tiles: []
   PiecePrefabs:
+  - {fileID: 8863527292054762111, guid: d5ee8eeec8ab71e4da5a74e9d96cc766, type: 3}
   - {fileID: 1048428482346986882, guid: 0e9cc9d57cd86d547b64a8ced8d63c85, type: 3}
+  - {fileID: 5875529180558880068, guid: 9c88d3d4f9ea35e4194da0f223201cd9, type: 3}
+  - {fileID: 5875529180558880068, guid: 4e9ab3bdce057b84a8db086b329b06de, type: 3}
+  - {fileID: 5875529180558880068, guid: d7a880d6e43c95147a96f3c06379032c, type: 3}
   - {fileID: 5875529180558880068, guid: 98eaa44666c9eff43a4f583cd69aa79c, type: 3}
-  - {fileID: 5875529180558880068, guid: 98eaa44666c9eff43a4f583cd69aa79c, type: 3}
-  - {fileID: 5875529180558880068, guid: 98eaa44666c9eff43a4f583cd69aa79c, type: 3}
-  - {fileID: 5875529180558880068, guid: 98eaa44666c9eff43a4f583cd69aa79c, type: 3}
-  - {fileID: 5875529180558880068, guid: 98eaa44666c9eff43a4f583cd69aa79c, type: 3}
+  - {fileID: 5875529180558880068, guid: 66c210f80ae214443921f5c6a99338be, type: 3}
   ActivePieces: []

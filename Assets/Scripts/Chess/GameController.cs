@@ -7,9 +7,12 @@ namespace Chess
 {
     public class GameController : MonoBehaviour
     {
-        public Piece SelectedPiece;
+        public static Piece SelectedPiece;
         public Player WhitePlayer;
         public Player BlackPlayer;
+        
+        /* true = white, false = black */
+        public bool WhitesTurn = false;
 
         private Board _board;
 
@@ -18,9 +21,14 @@ namespace Chess
             _board = Instantiate(Resources.Load<GameObject>(CONSTANTS.ChessBoardPrefab)).GetComponent<Board>();
             _board.Initialize();
 
-            WhitePlayer = Instantiate(Resources.Load<GameObject>(CONSTANTS.ChessPlayerPrefab)).GetComponent<Player>();
+            /*WhitePlayer = Instantiate(Resources.Load<GameObject>(CONSTANTS.ChessPlayerPrefab)).GetComponent<Player>();
 
-            BlackPlayer = Instantiate(Resources.Load<GameObject>(CONSTANTS.ChessPlayerPrefab)).GetComponent<Player>();
+            BlackPlayer = Instantiate(Resources.Load<GameObject>(CONSTANTS.ChessPlayerPrefab)).GetComponent<Player>();*/
+        }
+
+        public void EndTurn()
+        {
+
         }
     }
 }

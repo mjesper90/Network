@@ -9,7 +9,7 @@ namespace Chess
     public class Board : MonoBehaviour //, IBoard
     {
         public GameObject Selector;
-        public List<Tile> Tiles;
+        public static Tile[,] Tiles = new Tile[8, 8];
 
         /* Piece value:
         0: Blank
@@ -46,27 +46,36 @@ namespace Chess
                     GameObject go = Instantiate(Resources.Load<GameObject>(CONSTANTS.ChessTilePrefab));
                     go.transform.parent = transform;
                     go.GetComponent<Tile>().Initialize(i, j);
-                    Tiles.Add(go.GetComponent<Tile>());
+                    Tiles[i, j] = go.GetComponent<Tile>();
                 }
             }
 
-            
+            SpawnPieces();
         }
-        
-        public void SetupPiece(int value, int x, int y, int owner)
+
+        public void SpawnPieces()
+        {
+            for (int i = 0; i < 8; i++)
+            {
+                for (int j = 0; j < 8; j++)
+                {
+                    int value = StandardSetup[i, j];
+
+                    if (value != 0)
+                    {
+                        GameObject piece = Instantiate(PiecePrefabs[value]);
+
+                        Tile tile = Tiles[i, j];
+
+                        tile.SetPiece(piece);
+                    }
+                }
+            }
+        }
+
+        public void SetupPiece(int value, int x, int y, Player owner)
         {
             GameObject piece = Instantiate(PiecePrefabs[value]);
-            SetLocation(piece, x, y);
-        }
-
-        public static void SetLocation(GameObject piece, int x, int y)
-        {
-            int[] pos = new int[2];
-
-            pos[0] = x;
-            pos[1] = y;
-
-            //piece.transform.position = Board.TileToVector(pos);
         }
     }
 }
