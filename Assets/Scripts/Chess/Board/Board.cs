@@ -64,10 +64,9 @@ namespace Chess
                     if (value != 0)
                     {
                         GameObject piece = Instantiate(PiecePrefabs[value]);
-
+                        Piece p = piece.GetComponent<Piece>();
                         Tile tile = Tiles[i, j];
-
-                        tile.SetPiece(piece);
+                        tile.SetPiece(p);
                     }
                 }
             }

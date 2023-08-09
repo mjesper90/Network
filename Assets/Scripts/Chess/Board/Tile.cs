@@ -64,8 +64,9 @@ namespace Chess
         public void SetPiece(Piece piece)
         {
             _piece = piece;
-
-            piece.transform.position = transform.position + new Vector3(0.5f, 0, 0.5f);
+            Piece p = piece.GetComponent<Piece>();
+            GameObject go2 = p.gameObject;
+            go2.transform.position = transform.position + new Vector3(0.5f, 0, 0.5f);
         }
 
         public Piece GetPiece()
