@@ -34,6 +34,14 @@ public static class CONSTANTS
     public static readonly string AmongUsServerPrefab = "AmongUs/Prefabs/Server";
     public static readonly float AmongUsInteractDistance = 2f;
 
+    //Chess
+    public static readonly string ChessPlayerPrefab = "Chess/Prefabs/Player";
+    public static readonly string ChessClientPrefab = "Chess/Prefabs/Client";
+    public static readonly string ChessServerPrefab = "Chess/Prefabs/Server";
+    public static readonly string ChessBoardPrefab = "Chess/Prefabs/Board";
+    public static readonly string ChessTilePrefab = "Chess/Prefabs/Tile";
+    public static readonly string ChessPiecePrefab = "Chess/Prefabs/Piece";
+
     //Matchmaking
     public static readonly int MaxPlayersPerMatch = 999;
 
