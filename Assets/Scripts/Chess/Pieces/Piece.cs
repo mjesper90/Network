@@ -4,47 +4,35 @@ using UnityEngine;
 
 namespace Chess.Pieces
 {
-    public class Piece : MonoBehaviour
+    public abstract class Piece : MonoBehaviour, Moveable
     {
-        public virtual List<int[]> PossibleMoves()
+        public Player Owner = null;
+        public Tile CurrentTile = null;
+
+        public abstract List<Tile> PossibleMoves();
+        public virtual void MoveTo(Tile tile)
         {
-            List<int[]> moves = new List<int[]>();
-            // check every tile here for possible moves, set this up so it can only move forward or attack diagonally
-
-            
-
-            return moves;
-        }
-
-        // Start is called before the first frame update
-        void Start()
-        {
-            // Setup all the stuff for that any chess piece would need
-        }
-
-        // Update is called once per frame
-        void Update()
-        {
-            // Check for collisions and such
-        }
-
-        bool Move()
-        {
-            if (ValidMove())
+            if (tile != null)
             {
-                return true; // Shows success in moving the piece
-            }
-            else
-            {
-                return false; // Gives an error, not letting the user initiate such a move
+                if (CurrentTile != null) CurrentTile.SetPiece(null);
+                CurrentTile = tile;
+                StartCoroutine(lerpMovement(transform.position, tile, 1f));
             }
         }
 
-        bool ValidMove()
+        IEnumerator lerpMovement(Vector3 start, Tile tile, float speed)
         {
-            // Check for the piece type initiating script, where to move and so on
-
-            return true;
+            float startTime = Time.time;
+            Vector3 target = new Vector3(tile.transform.position.x, tile.transform.position.y + 1f, tile.transform.position.z);
+            float distance = Vector3.Distance(start, target);
+            float fracJourney = 0;
+            while (fracJourney < 1)
+            {
+                float distCovered = (Time.time - startTime) * speed;
+                fracJourney = distCovered / distance;
+                transform.position = Vector3.Lerp(start, target, fracJourney);
+                yield return null;
+            }
         }
     }
 }
