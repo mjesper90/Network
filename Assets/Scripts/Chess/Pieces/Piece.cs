@@ -10,6 +10,15 @@ namespace Chess.Pieces
         public Tile CurrentTile = null;
 
         public abstract List<Tile> PossibleMoves();
+
+    public void Start()
+        {
+            if (Owner.gameObject.name == "Black Player")
+            {
+                // Change the color of the pieces to red
+            }
+        }
+
         public virtual void MoveTo(Tile tile)
         {
             if (tile != null)

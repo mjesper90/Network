@@ -16,27 +16,27 @@ namespace Chess
         public void Initialize(int x, int y, Board board)
         {
             this.Board = board;
-            _color = Color.black;
+            _color = Color.white;
             if (x % 2 == 0)
             {
                 if (y % 2 == 0)
                 {
-                    _color = Color.black;
+                    _color = Color.white;
                 }
                 else
                 {
-                    _color = Color.white;
+                    _color = Color.black;
                 }
             }
             else
             {
                 if (y % 2 == 0)
                 {
-                    _color = Color.white;
+                    _color = Color.black;
                 }
                 else
                 {
-                    _color = Color.black;
+                    _color = Color.white;
                 }
             }
             GetComponent<Renderer>().material.color = _color;
