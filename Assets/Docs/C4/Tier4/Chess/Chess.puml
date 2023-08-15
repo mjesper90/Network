@@ -1,0 +1,63 @@
+@startuml
+
+class GameController{
+    + {static} GameController Instance
+    + Piece SelectedPiece
+    + Tile ClickedTile
+    + List<Board> Boards
+    + void Awake()
+    + void Start()
+}
+
+class Board {
+    + {static} int[,] StandardSetup
+    + Tile[,] Tiles
+    + Player WhitePlayer
+    + Player BlackPlayer
+    + bool WhitesTurn
+    + List<GameObject> PiecePrefabs
+    + List<Piece> ActivePieces
+    + void Initialize()
+    + void SpawnPlayers()
+    + void ResetBoard()
+    - void DestroyTiles()
+    - void DestroyPieces()
+    - void SpawnTiles()
+    - void SpawnPieces()
+}
+
+class Tile{
+
+}
+
+class Player {
+
+}
+
+class Piece {
+    + Player Owner
+    + Tile CurrentTile
+    + {abstract} List<Tile> PossibleMoves()
+    ~ void MoveTo(Tile tile)
+    - IEnumerator lerpMovement(Vector3 target, float duration)
+}
+
+interface Moveable {
+    + List<Tile> PossibleMoves()
+    + void MoveTo(Tile tile)
+}
+
+GameController "1" *-- "*" Board
+Board "1" *-- "*" Tile
+Board "1" *-- "2" Player
+Player "1" o-- "*" Piece
+Piece "1" o-- "1" Tile
+
+Piece -up-|> Moveable
+
+Piece <|-- Pawn
+Piece <|-- Rook
+
+
+
+@enduml

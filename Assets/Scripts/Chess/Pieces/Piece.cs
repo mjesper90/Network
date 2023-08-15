@@ -11,20 +11,14 @@ namespace Chess.Pieces
 
         public abstract List<Tile> PossibleMoves();
 
-        public void Start()
+        public void ChangeColor(Color color)
         {
-            if (Owner.gameObject.name == "Black Player")
-            {
-                // This code should theoretically change the piece color for the black player, but doesn't currently work.
+            GetComponent<Renderer>().material.color = color;
+        }
 
-                Material material = GetComponent<Renderer>().material;
-
-                string name = material.name;
-
-                name = name.Remove(0, 4);
-
-                material.SetTexture("Red" + name, null);
-            }
+        public void ApplyTexture(Texture2D texture)
+        {
+            GetComponent<Renderer>().material.mainTexture = texture;
         }
 
         public virtual void MoveTo(Tile tile)

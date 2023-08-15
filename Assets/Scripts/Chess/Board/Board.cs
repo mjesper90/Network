@@ -11,7 +11,7 @@ namespace Chess
         public Tile[,] Tiles = new Tile[8, 8];
         public Player WhitePlayer;
         public Player BlackPlayer;
-        
+
         /* true = white, false = black */
         public bool WhitesTurn = false;
 
@@ -119,6 +119,7 @@ namespace Chess
                     {
                         // Spawn piece
                         GameObject go = Instantiate(PiecePrefabs[value - 1]);
+                        go.name = $"{go.name}".Substring(0, go.name.Length - 7);
                         Player owner = (i < 4) ? WhitePlayer : BlackPlayer;
                         go.transform.parent = owner.transform;
 
@@ -131,6 +132,18 @@ namespace Chess
                         Tile tile = Tiles[i, j];
                         tile.SetPiece(p);
                         ActivePieces.Add(p);
+                        if (owner == BlackPlayer)
+                        {
+                            //p.ChangeColor(Color.black);
+                            Texture2D txt2d = Resources.Load<Texture2D>(CONSTANTS.TextureBlackDir + p.gameObject.name);
+                            p.ApplyTexture(txt2d);
+                        }
+                        else
+                        {
+                            //p.ChangeColor(Color.white);
+                            Texture2D txt2d = Resources.Load<Texture2D>(CONSTANTS.TextureWhiteDir + p.gameObject.name);
+                            p.ApplyTexture(txt2d);
+                        }
                     }
                 }
             }

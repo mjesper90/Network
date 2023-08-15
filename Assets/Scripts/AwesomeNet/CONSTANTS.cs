@@ -41,6 +41,8 @@ public static class CONSTANTS
     public static readonly string ChessBoardPrefab = "Chess/Prefabs/Board";
     public static readonly string ChessTilePrefab = "Chess/Prefabs/Tile";
     public static readonly string ChessPiecePrefab = "Chess/Prefabs/Piece";
+    public static readonly string TextureWhiteDir = "Chess/Textures/White/";
+    public static readonly string TextureBlackDir = "Chess/Textures/Black/";
 
     //Matchmaking
     public static readonly int MaxPlayersPerMatch = 999;
