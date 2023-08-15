@@ -1,16 +1,20 @@
 using UnityEngine;
 using Chess.Pieces;
 using System;
+using System.Collections;
+using System.Collections.Generic;
 
 
 namespace Chess
 {
     public class Tile : MonoBehaviour
     {
-        private int _x, _y;
-        private Color _color;
-        public Piece _piece;
+        public Piece CurrentPiece;
         public Board Board;
+
+        private int _x, _y;
+        private Color _baseColor;
+        private Renderer _renderer;
 
         // Initialize is called from Board
         public void Initialize(int x, int y, Board board)
@@ -21,35 +25,37 @@ namespace Chess
             _x = x;
             _y = y;
 
-            SetColor();
+            _baseColor = BaseColor();
+            _renderer = GetComponent<Renderer>();
         }
 
-        public void SetColor()
+        private Color BaseColor()
         {
-            _color = Color.white;
+            Color color = Color.white;
             if (_x % 2 == 0)
             {
                 if (_y % 2 == 0)
                 {
-                    _color = Color.white;
+                    color = Color.white;
                 }
                 else
                 {
-                    _color = Color.black;
+                    color = Color.black;
                 }
             }
             else
             {
                 if (_y % 2 == 0)
                 {
-                    _color = Color.black;
+                    color = Color.black;
                 }
                 else
                 {
-                    _color = Color.white;
+                    color = Color.white;
                 }
             }
-            GetComponent<Renderer>().material.color = _color;
+            GetComponent<Renderer>().material.color = color;
+            return color;
         }
 
         public Tuple<int, int> GetCoordinates()
@@ -57,52 +63,81 @@ namespace Chess
             return new Tuple<int, int>(_x, _y);
         }
 
+        public void ResetColor()
+        {
+            GetComponent<Renderer>().material.color = _baseColor;
+        }
+
         void OnMouseDown()
         {
+            //Deselect the piece if right click
+            if (Input.GetMouseButtonDown(1))
+            {
+                if (GameController.Instance.SelectedPiece != null)
+                {
+                    foreach (Tile t in GameController.Instance.SelectedPiece.PossibleMoves())
+                    {
+                        t.ResetColor();
+                    }
+                    GameController.Instance.SelectedPiece = null;
+                }
+                return;
+            }
+
+            //Deselect the last clicked tile
+            if (GameController.Instance.ClickedTile != null)
+            {
+                GameController.Instance.ClickedTile.ResetColor();
+            }
+
+            //Set the clicked tile
             GameController.Instance.ClickedTile = this;
-            if (_piece != null)
+
+            //Move the piece if possible
+            if (GameController.Instance.SelectedPiece != null)
             {
-                GameController.Instance.SelectedPiece = _piece;
-
-                Board.ClearColors();
-
-                _color = Color.green;
-                GetComponent<Renderer>().material.color = _color;
+                foreach (Tile t in GameController.Instance.SelectedPiece.PossibleMoves())
+                {
+                    t.ResetColor();
+                }
+                if (GameController.Instance.SelectedPiece.PossibleMoves().Contains(this))
+                {
+                    GameController.Instance.SelectedPiece.MoveTo(this);
+                    GameController.Instance.SelectedPiece = null;
+                    return;
+                }
             }
-            else
+
+            //Select the piece if there is one
+            if (CurrentPiece != null)
             {
-                Board.ClearColors();
-
-                _color = Color.red;
-                GetComponent<Renderer>().material.color = _color;
+                //Highlight the possible moves
+                GameController.Instance.SelectedPiece = CurrentPiece;
+                HighlightTile(Color.green);
+                foreach (Tile t in CurrentPiece.PossibleMoves())
+                {
+                    t.HighlightTile(Color.blue);
+                }
+                return;
             }
+            
+            HighlightTile(Color.yellow);
+            GameController.Instance.SelectedPiece = null;
+        }
+
+        public void HighlightTile(Color color)
+        {
+            _renderer.material.color = color;
         }
 
         public void SetPiece(Piece piece)
         {
-            _piece = piece;
-            if (_piece != null)
+            CurrentPiece = piece;
+            if (CurrentPiece != null)
             {
-                _piece.MoveTo(this);
+                CurrentPiece.MoveTo(this);
             }
-
-            Board.ClearColors();
         }
 
-        public Piece GetPiece()
-        {
-            return _piece;
-        }
-
-        public void RemovePiece()
-        {
-            _piece = null;
-        }
-
-        public void ChangeColor()
-        {
-            _color = Color.white;
-            GetComponent<Renderer>().material.color = _color;
-        }
     }
 }

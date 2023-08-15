@@ -6,9 +6,14 @@ using UnityEngine;
 
 namespace Chess
 {
-    public class Board : MonoBehaviour //, IBoard
+    public class Board : MonoBehaviour
     {
         public Tile[,] Tiles = new Tile[8, 8];
+        public Player WhitePlayer;
+        public Player BlackPlayer;
+        
+        /* true = white, false = black */
+        public bool WhitesTurn = false;
 
         /* Piece value:
         0: Blank
@@ -38,26 +43,50 @@ namespace Chess
         // This method is called from GameController
         public void Initialize()
         {
+            SpawnPlayers();
             SpawnTiles();
             SpawnPieces();
         }
 
-        public void ResetBoard()
+        public void SpawnPlayers()
         {
-            throw new NotImplementedException();
+            WhitePlayer = Instantiate(Resources.Load<GameObject>(CONSTANTS.ChessPlayerPrefab)).GetComponent<Player>();
+            WhitePlayer.gameObject.name = "White Player";
+            BlackPlayer = Instantiate(Resources.Load<GameObject>(CONSTANTS.ChessPlayerPrefab)).GetComponent<Player>();
+            BlackPlayer.gameObject.name = "Black Player";
+            Transform playerParent = new GameObject("Players").transform;
+            WhitePlayer.transform.parent = playerParent;
+            BlackPlayer.transform.parent = playerParent;
+            playerParent.parent = transform;
+
         }
 
-        public void ClearColors()
+        public void ResetBoard()
         {
-            for (int x = 0; x < 8; x++)
-            {
-                for (int y = 0; y < 8; y++)
-                {
-                    Tile tile = Tiles[x, y];
+            WhitePlayer.Pieces.Clear();
+            BlackPlayer.Pieces.Clear();
+            DestroyPieces();
+            DestroyTiles();
+            SpawnTiles();
+            SpawnPieces();
+        }
 
-                    tile.SetColor();
-                }
+        private void DestroyTiles()
+        {
+            foreach (Tile tile in Tiles)
+            {
+                Destroy(tile.gameObject);
             }
+            Tiles = new Tile[8, 8];
+        }
+
+        private void DestroyPieces()
+        {
+            foreach (Piece piece in ActivePieces)
+            {
+                Destroy(piece.gameObject);
+            }
+            ActivePieces = new List<Piece>();
         }
 
         private void SpawnTiles()
@@ -90,7 +119,7 @@ namespace Chess
                     {
                         // Spawn piece
                         GameObject go = Instantiate(PiecePrefabs[value - 1]);
-                        Player owner = (i < 4) ? GameController.Instance.WhitePlayer : GameController.Instance.BlackPlayer;
+                        Player owner = (i < 4) ? WhitePlayer : BlackPlayer;
                         go.transform.parent = owner.transform;
 
                         // Set piece owner
@@ -101,6 +130,7 @@ namespace Chess
                         // Set piece tile
                         Tile tile = Tiles[i, j];
                         tile.SetPiece(p);
+                        ActivePieces.Add(p);
                     }
                 }
             }

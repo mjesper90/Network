@@ -11,7 +11,7 @@ namespace Chess.Pieces
 
         public abstract List<Tile> PossibleMoves();
 
-    public void Start()
+        public void Start()
         {
             if (Owner.gameObject.name == "Black Player")
             {
@@ -31,25 +31,35 @@ namespace Chess.Pieces
         {
             if (tile != null)
             {
-                if (CurrentTile != null) CurrentTile.SetPiece(null);
+                if (CurrentTile != null)
+                {
+                    CurrentTile.SetPiece(null);
+                }
                 CurrentTile = tile;
-                StartCoroutine(lerpMovement(transform.position, tile, 1f));
+
+                if (tile.CurrentPiece != null)
+                {
+                    //Attack piece on tile
+                }
+                tile.CurrentPiece = this;
+                StartCoroutine(lerpMovement(tile.transform.position, 1f));
             }
         }
 
-        IEnumerator lerpMovement(Vector3 start, Tile tile, float speed)
+        private IEnumerator lerpMovement(Vector3 targetPosition, float duration)
         {
-            float startTime = Time.time;
-            Vector3 target = new Vector3(tile.transform.position.x, tile.transform.position.y + 1f, tile.transform.position.z);
-            float distance = Vector3.Distance(start, target);
-            float fracJourney = 0;
-            while (fracJourney < 1)
+            Vector3 startingPosition = transform.position;
+            float elapsedTime = 0f;
+            targetPosition = targetPosition + new Vector3(0, 0.5f, 0);
+
+            while (elapsedTime < duration)
             {
-                float distCovered = (Time.time - startTime) * speed;
-                fracJourney = distCovered / distance;
-                transform.position = Vector3.Lerp(start, target, fracJourney);
+                transform.position = Vector3.Lerp(startingPosition, targetPosition, elapsedTime / duration);
+                elapsedTime += Time.deltaTime;
                 yield return null;
             }
+
+            transform.position = targetPosition; // Ensure final position is accurate
         }
     }
 }
