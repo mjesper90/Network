@@ -16,10 +16,20 @@ namespace Chess
         public void Initialize(int x, int y, Board board)
         {
             this.Board = board;
+
+            transform.position = new Vector3((float)x, 0.2f, (float)y);
+            _x = x;
+            _y = y;
+
+            SetColor();
+        }
+
+        public void SetColor()
+        {
             _color = Color.white;
-            if (x % 2 == 0)
+            if (_x % 2 == 0)
             {
-                if (y % 2 == 0)
+                if (_y % 2 == 0)
                 {
                     _color = Color.white;
                 }
@@ -30,7 +40,7 @@ namespace Chess
             }
             else
             {
-                if (y % 2 == 0)
+                if (_y % 2 == 0)
                 {
                     _color = Color.black;
                 }
@@ -40,9 +50,6 @@ namespace Chess
                 }
             }
             GetComponent<Renderer>().material.color = _color;
-            transform.position = new Vector3((float)x, 0.2f, (float)y);
-            _x = x;
-            _y = y;
         }
 
         public Tuple<int, int> GetCoordinates()
@@ -56,6 +63,18 @@ namespace Chess
             if (_piece != null)
             {
                 GameController.Instance.SelectedPiece = _piece;
+
+                Board.ClearColors();
+
+                _color = Color.green;
+                GetComponent<Renderer>().material.color = _color;
+            }
+            else
+            {
+                Board.ClearColors();
+
+                _color = Color.red;
+                GetComponent<Renderer>().material.color = _color;
             }
         }
 
@@ -66,6 +85,8 @@ namespace Chess
             {
                 _piece.MoveTo(this);
             }
+
+            Board.ClearColors();
         }
 
         public Piece GetPiece()

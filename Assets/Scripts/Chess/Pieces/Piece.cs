@@ -15,7 +15,15 @@ namespace Chess.Pieces
         {
             if (Owner.gameObject.name == "Black Player")
             {
-                // Change the color of the pieces to red
+                // This code should theoretically change the piece color for the black player, but doesn't currently work.
+
+                Material material = GetComponent<Renderer>().material;
+
+                string name = material.name;
+
+                name = name.Remove(0, 4);
+
+                material.SetTexture("Red" + name, null);
             }
         }
 

@@ -47,6 +47,19 @@ namespace Chess
             throw new NotImplementedException();
         }
 
+        public void ClearColors()
+        {
+            for (int x = 0; x < 8; x++)
+            {
+                for (int y = 0; y < 8; y++)
+                {
+                    Tile tile = Tiles[x, y];
+
+                    tile.SetColor();
+                }
+            }
+        }
+
         private void SpawnTiles()
         {
             // Create tile parent
