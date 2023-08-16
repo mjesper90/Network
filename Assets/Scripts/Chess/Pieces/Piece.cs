@@ -25,16 +25,18 @@ namespace Chess.Pieces
         {
             if (tile != null)
             {
+                if (tile.CurrentPiece != null && tile.CurrentPiece != this)
+                {
+                    tile.CurrentPiece.Attack(tile);
+                }
+
                 if (CurrentTile != null)
                 {
                     CurrentTile.SetPiece(null);
                 }
                 CurrentTile = tile;
 
-                if (tile.CurrentPiece != null)
-                {
-                    //Attack piece on tile
-                }
+                
                 tile.CurrentPiece = this;
                 StartCoroutine(lerpMovement(tile.transform.position, 1f));
             }
@@ -54,6 +56,18 @@ namespace Chess.Pieces
             }
 
             transform.position = targetPosition; // Ensure final position is accurate
+        }
+
+        public void Attack(Tile tile)
+        {
+            if (tile.CurrentPiece.name == "King")
+            {
+                GameController.Win(Owner);
+            }
+            else
+            {
+                Destroy(gameObject);
+            }
         }
     }
 }

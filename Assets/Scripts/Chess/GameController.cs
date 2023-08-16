@@ -27,5 +27,10 @@ namespace Chess
             Boards.Add(b);
             b.Initialize();
         }
+
+        public static void Win(Player winner)
+        {
+            print(winner.ToString());
+        }
     }
 }
