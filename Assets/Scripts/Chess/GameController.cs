@@ -31,5 +31,9 @@ namespace Chess
             b.Initialize();
         }
 
+        public static void Win(Player winner)
+        {
+            print(winner.ToString());
+        }
     }
 }
