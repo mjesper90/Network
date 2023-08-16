@@ -1,0 +1,43 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+title Container Diagram - NetworkLib
+
+Person(developer, "Developer", "A person who develops games")
+Person_Ext(player, "Player", "A person who plays games")
+
+Boundary(mygame, "My Game", "A game"){
+    Container(game, "Game", "My game")
+    Boundary(network_lib, "Network Repository"){
+        Container(nwlib, "AwesomeNet", "A library for networking")
+        Container(myshooter, "MyShooter", "Sample applications")
+        Container(chex, "Chex", "Sample applications")
+        Container(au, "AmongUs", "Sample applications")
+    }
+}
+
+Boundary(steam, "Steam", "A game distribution platform"){
+}
+
+Boundary(vps, "VPS", "A virtual private server"){
+    Container_Ext(webserver, "Web Server", "Serves the web app")
+    ContainerDb_Ext(db, "Database", "Stores game data")
+    Container_Ext(fp, "Proxy", "Handles incoming requests")
+    Container_Ext(gi, "GameServer", "Runs a server instance")
+    Container_Ext(web, "Website", "www.example.com")
+
+    webserver *-- web : HTTP
+    webserver --> gi : Hosts
+    web --o db : ReadWrite
+    fp o-- webserver : Routes
+    fp o-- web : Routes
+    fp o-- gi : Routes
+}
+
+game --> nwlib : Uses
+player --> steam : Buys
+steam <-- game : Upload
+player --> fp : TCP, HTTPS
+gi --> game : Hosts
+developer --> game : Develops
+@enduml

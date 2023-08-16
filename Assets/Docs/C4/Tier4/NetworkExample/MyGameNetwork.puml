@@ -1,0 +1,67 @@
+@startuml
+
+set separator ::
+namespace MyGame #LightBlue{
+    class GameController <<MonoBehaviour>> {
+        + void Start()
+    }
+
+    namespace NetworkIntegration #LightGray{
+
+
+
+        namespace NetworkLib #LightGray{
+            class Match{
+                # ConcurrentDictionary<string, Message> _lastMessages
+            }
+            class Client{
+                # ConcurrentQueue<Message> _messageQueue
+            }
+            class Server{}
+        }
+
+        class MessageHandler <<MonoBehaviour>>{
+            + void Update()
+            + void HandleMessage(Message msg)
+        }
+
+        namespace Client #LightSlateGray{
+            class ClientInit <<MonoBehaviour>>{
+                + string IP = "127.0.0.1"
+                + int Port = 8052
+                + void Send(Message msg)
+            }
+        }
+        namespace Server #LightSlateGray{
+            class ServerInit <<MonoBehaviour>>{
+                + void Start()
+                + void FixedUpdate()
+                + void OnApplicationQuit()
+            }
+            class NotQuakeMatch{
+                # Dictionary<string, Message> _playerPositions
+                # Dictionary<string, Message> _playerRotations
+            }
+        }
+    }
+}
+
+MyGame::NetworkIntegration::Server::ServerInit *-- MyGame::NetworkIntegration::NetworkLib::Server
+MyGame::NetworkIntegration::Client::ClientInit *-- MyGame::NetworkIntegration::NetworkLib::Client
+MyGame::NetworkIntegration::Server::NotQuakeMatch --|> MyGame::NetworkIntegration::NetworkLib::Match
+
+MyGame::NetworkIntegration::NetworkLib::Match o--* MyGame::NetworkIntegration::NetworkLib::Server
+MyGame::NetworkIntegration::NetworkLib::Match o-- MyGame::NetworkIntegration::NetworkLib::Client
+MyGame::NetworkIntegration::MessageHandler o-- MyGame::NetworkIntegration::NetworkLib::Client
+
+
+MyGame::GameController o-- MyGame::NetworkIntegration::MessageHandler
+MyGame::GameController o-- MyGame::NetworkIntegration::Server::ServerInit
+MyGame::GameController o-- MyGame::NetworkIntegration::Client::ClientInit
+MyGame::GameController o-- MyGame::NetworkIntegration::Server::NotQuakeMatch
+
+MyGame::NetworkIntegration::NetworkLib::Server *-- MyGame::NetworkIntegration::NetworkLib::Client
+
+
+
+@enduml

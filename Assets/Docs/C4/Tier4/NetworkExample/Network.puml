@@ -1,0 +1,183 @@
+@startuml
+
+set separator ::
+namespace MyGame #LightBlue{
+    namespace DTOs #LightSlateGray{
+        class PlayerPosition{}
+        class Position{}
+        class User{}
+        class UnityLogger{}
+    }
+    class GameController <<MonoBehaviour>> #LightSlateGray {
+        + void Awake()
+        + void Start()
+        + void Update()
+        + void SetServer(Server server)
+        + void SetClient(Client client)
+        + Server GetServer()
+        + Client GetClient()
+        - void HandleMessage(Message msg)
+    }
+
+    namespace NetworkLib #LightGray{
+        namespace Common #LightYellow{
+            interface IMatch{
+                + void AddPlayer(Client client)
+                + void RemovePlayer(Client client)
+                + Message[] GetState()
+                + void UpdateState()
+            }
+            namespace DTOs #LightGreen{
+                class Authentication{
+                    + string Username
+                    + string Password
+                }
+                class Message{
+                    + string Id
+                    + MessageType MsgType
+                    + byte[] Data
+                    + string Callback
+                }
+                enum MessageType{
+                    User,
+                    PlayerPosition,
+                    Shoot,
+                    Player,
+                    Update,
+                    Message,
+                    Login,
+                    JoinQueue,
+                    LoginResponse,
+                    MatchJoined
+                }
+            }
+            namespace Logger #LightGreen{
+                interface ILogNetwork{
+                    + void Log(string message);
+                    + void LogWarning(string message);
+                    + void LogError(string message);
+                }
+                class DefaultLogger{
+
+                }
+                DefaultLogger -up-|> ILogNetwork
+            }
+        }
+        interface IClient{
+            + bool IsConnected()
+            + void Disconnect()
+            + async Task SendAsync(byte[] bytes)
+            + async Task SendAsync(object obj)
+            + void Send(object obj)
+            + void Send(byte[] bytes)
+            + T Deserialize<T>(byte[] data)
+            + byte[] Serialize(object obj)
+        }
+        interface IServer{
+            + void UpdateServer()
+            + void Shutdown()
+        }
+
+        namespace GameClient #LightYellow{
+            class Client {
+                + TcpClient Tcp;
+                + Network NetworkHandler;
+                - NetworkStream _tcpStream;
+                - byte[] _TcpReceiveBuffer;
+                - BinaryFormatter _br;
+                + {static} ILogNetwork Log
+                + Client(ILogNetwork log, TcpClient socket)
+                - void RecieveCallback(IAsyncResult ar)
+            }
+            class Network {
+                + Client Client
+                + Authentication Auth = null
+                + bool InGame = false
+                + bool InQueue = false
+                - ConcurrentQueue<Message> _msgQueue
+                + Network(Client client)
+                + void Enqueue(Message msg)
+                + bool TryDequeue(out Message msg)
+            }
+        }
+        namespace GameServer #LightYellow{
+            class Server{
+                + int Port
+                + TcpListener TCPListener
+                + List<Client> Clients
+                + MatchMaking MatchMaking
+                + {static} ILogNetwork Log
+                + Server(ILogNetwork log, int port)
+                - void TCPAcceptCallback(IAsyncResult ar)
+                - void CheckClientQueues()
+            }
+            class Match{
+                + List<Client> Clients
+                - ConcurrentDictionary<string, Message> _playerPositions
+            }
+            class MatchMaking{
+                + List<Match> Matches
+                + void UpdateMatches()
+                + void Join(Client client)
+            }
+        }
+    }
+
+    struct CONSTANTS <<static>> #LightSlateGray {
+        + {static} int PORT
+        + {static} Vector3 CameraOffset
+        + {static} float Gravity
+        + {static} float ProjectileSpeed
+        + {static} float PlayerSpeed
+        + {static} float JumpForce
+    }
+
+    namespace Client #LightSlateGray{
+        class ClientInit <<MonoBehaviour>>{
+            + string IP = "127.0.0.1"
+            + int Port = 8052
+            + {static} ClientInit Instance
+            + void Awake()
+            + void Send(object obj)
+            # void FixedUpdate()
+        }
+    }
+    namespace Server #LightSlateGray{
+        class ServerInit <<MonoBehaviour>>{
+            + void Start()
+            + void FixedUpdate()
+            + void OnApplicationQuit()
+        }
+        class NotQuakeMatch{
+
+        }
+    }
+    class UnityLogger #LightSlateGray {
+
+    }
+}
+
+
+MyGame::NetworkLib::GameClient::Client *-- MyGame::NetworkLib::GameClient::Network
+
+MyGame::NetworkLib::GameServer::Server *-- MyGame::NetworkLib::GameServer::MatchMaking
+MyGame::NetworkLib::GameServer::Server *-- MyGame::NetworkLib::GameClient::Client
+MyGame::NetworkLib::GameServer::MatchMaking *-- MyGame::NetworkLib::GameServer::Match
+MyGame::NetworkLib::GameServer::Match o-- MyGame::NetworkLib::GameClient::Client
+MyGame::NetworkLib::IClient <|-- MyGame::NetworkLib::GameClient::Client
+MyGame::NetworkLib::IServer <|-- MyGame::NetworkLib::GameServer::Server
+MyGame::NetworkLib::Common::IMatch <|-- MyGame::NetworkLib::GameServer::Match
+
+MyGame::NetworkLib::GameClient::Network *-- MyGame::NetworkLib::Common::DTOs::Authentication
+
+MyGame::UnityLogger --|> MyGame::NetworkLib::Common::Logger::ILogNetwork
+
+MyGame::Client::ClientInit *-- MyGame::NetworkLib::GameClient::Client
+MyGame::Server::ServerInit *-- MyGame::NetworkLib::GameServer::Server
+MyGame::Server::NotQuakeMatch -up-|> MyGame::NetworkLib::GameServer::Match
+MyGame::Server::ServerInit *-- MyGame::Server::NotQuakeMatch
+
+MyGame::GameController -- MyGame::NetworkLib::GameClient::Network : "dequeues"
+
+
+@enduml

@@ -1,0 +1,25 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+System_Boundary(mygame, "MyShooter", "A game I made") {
+    Component(c_player, "Player", "an ingame character")
+    Component(gamecontroller, "GameControl", "the game controller")
+    Component(ui, "UI", "the user interface")
+    System_Boundary(nwstuff, "Networking stuff"){
+        Component(myMatch, "Match", "the match")
+        Component(c_network, "NetworkSetup", "the network initialization")
+
+        Component_Ext(network_lib, "AwesomeNet", "A library for networking")
+    }
+}
+
+network_lib -0)- c_network
+network_lib -0)- myMatch
+gamecontroller --> c_network
+gamecontroller --> ui
+gamecontroller --> c_player
+c_network ... c_player
+c_player ... myMatch
+c_network ... myMatch
+
+@enduml

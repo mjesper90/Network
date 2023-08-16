@@ -1,0 +1,40 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title Container Diagram - NetworkLib
+Person_Ext(player, "Player", "A person who plays games")
+Boundary(mygame, "My Game", "A game"){
+    Component_Ext(game, "Game", "My game")
+}
+Boundary(steam, "Steam", "A game distribution platform"){
+}
+
+Boundary(vps, "VPS", "A virtual private server"){
+    Component_Ext(webserver, "Web Server", "Serves the web app")
+    Component_Ext(login, "Login Server", "Handles logins")
+    ComponentDb_Ext(db, "Database", "Stores game data")
+    Component_Ext(fp, "Proxy", "Handles incoming requests")
+    Component_Ext(gi, "GameServer", "Runs a server instance")
+    Component_Ext(web, "Website", "www.example.com")
+    fp --* webserver
+    login --* webserver
+    webserver --* db
+    webserver --* web
+    web --* db
+    fp --* web
+}
+Boundary(network_lib, "Network Library", "A library for networking"){
+    Component(server, "Server", "A server")
+    Component(client, "Client", "A client")
+    server - client
+}
+
+game --> server : Uses
+game --> client : Uses
+gi --> server : Hosts
+webserver --> gi : Hosts
+player --> steam : Buys
+steam --> game : Distributes
+player --> fp : Uses
+gi -> game : Uses
+@enduml
