@@ -9,6 +9,7 @@ namespace Chess
     public class Board : MonoBehaviour
     {
         public Tile[,] Tiles = new Tile[8, 8];
+        public List<BoardLog> MatchLog = new List<BoardLog>();
         public Player WhitePlayer;
         public Player BlackPlayer;
 
@@ -36,8 +37,6 @@ namespace Chess
             {1, 1, 1, 1, 1, 1, 1, 1},
             {2, 3, 4, 5, 6, 4, 3, 2}
         };
-
-        public List<Piece> ActivePieces = new List<Piece>();
 
         // Spawn 8x8 board and pieces
         // This method is called from GameController
@@ -82,11 +81,10 @@ namespace Chess
 
         private void DestroyPieces()
         {
-            foreach (Piece piece in ActivePieces)
+            foreach (Piece piece in GetActivePieces())
             {
                 Destroy(piece.gameObject);
             }
-            ActivePieces = new List<Piece>();
         }
 
         private void SpawnTiles()
@@ -131,22 +129,52 @@ namespace Chess
                         // Set piece tile
                         Tile tile = Tiles[i, j];
                         tile.SetPiece(p);
-                        ActivePieces.Add(p);
+                        owner.Pieces.Add(p);
                         if (owner == BlackPlayer)
                         {
-                            //p.ChangeColor(Color.black);
-                            Texture2D txt2d = Resources.Load<Texture2D>(CONSTANTS.TextureBlackDir + p.gameObject.name);
+                            string path = CONSTANTS.TextureBlackDir + p.gameObject.name;
+                            Texture2D txt2d = Resources.Load<Texture2D>(path);
                             p.ApplyTexture(txt2d);
                         }
                         else
                         {
-                            //p.ChangeColor(Color.white);
-                            Texture2D txt2d = Resources.Load<Texture2D>(CONSTANTS.TextureWhiteDir + p.gameObject.name);
+                            string path = CONSTANTS.TextureWhiteDir + p.gameObject.name;
+                            Texture2D txt2d = Resources.Load<Texture2D>(path);
                             p.ApplyTexture(txt2d);
                         }
                     }
                 }
             }
+        }
+
+        public void NextMove(Piece piece, Tile tile)
+        {
+            if (piece == null || tile == null)
+            {
+                return;
+            }
+            BoardLog logEntry = new BoardLog(piece.CurrentTile, tile);
+            MatchLog.Add(logEntry);
+            Debug.Log($"Match log: {MatchLog.Count} " + logEntry.ToString());
+            piece.MoveTo(tile);
+            WhitesTurn = !WhitesTurn;
+        }
+        public List<Piece> GetActivePieces()
+        {
+            List<Piece> pieces = new List<Piece>();
+            foreach (Tile tile in Tiles)
+            {
+                if (tile.CurrentPiece != null)
+                {
+                    pieces.Add(tile.CurrentPiece);
+                }
+            }
+            return pieces;
+        }
+
+        public Player ActivePlayer()
+        {
+            return (WhitesTurn) ? WhitePlayer : BlackPlayer;
         }
     }
 }

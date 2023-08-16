@@ -68,62 +68,58 @@ namespace Chess
             GetComponent<Renderer>().material.color = _baseColor;
         }
 
-        void OnMouseDown()
+        public void OnMouseDown()
         {
-            //Deselect the piece if right click
-            if (Input.GetMouseButtonDown(1))
+            Player activePlayer = Board.ActivePlayer();
+
+            // Deselect the last clicked tile
+            if (activePlayer.ClickedTile != null)
             {
-                if (GameController.Instance.SelectedPiece != null)
-                {
-                    foreach (Tile t in GameController.Instance.SelectedPiece.PossibleMoves())
-                    {
-                        t.ResetColor();
-                    }
-                    GameController.Instance.SelectedPiece = null;
-                }
-                return;
+                activePlayer.ClickedTile.ResetColor();
             }
 
-            //Deselect the last clicked tile
-            if (GameController.Instance.ClickedTile != null)
-            {
-                GameController.Instance.ClickedTile.ResetColor();
-            }
+            // Set the clicked tile
+            activePlayer.ClickedTile = this;
 
-            //Set the clicked tile
-            GameController.Instance.ClickedTile = this;
+            Piece selectedPiece = activePlayer.SelectedPiece;
 
-            //Move the piece if possible
-            if (GameController.Instance.SelectedPiece != null)
+            if (selectedPiece != null)
             {
-                foreach (Tile t in GameController.Instance.SelectedPiece.PossibleMoves())
+                // Handle piece movement
+                foreach (Tile t in selectedPiece.PossibleMoves())
                 {
                     t.ResetColor();
                 }
-                if (GameController.Instance.SelectedPiece.PossibleMoves().Contains(this))
+
+                if (selectedPiece.PossibleMoves().Contains(this) && selectedPiece.Owner == activePlayer)
                 {
-                    GameController.Instance.SelectedPiece.MoveTo(this);
-                    GameController.Instance.SelectedPiece = null;
+                    Board.NextMove(selectedPiece, this);
+                    activePlayer.SelectedPiece = null;
                     return;
                 }
             }
 
-            //Select the piece if there is one
-            if (CurrentPiece != null)
+            Piece currentPiece = CurrentPiece;
+
+            if (currentPiece != null)
             {
-                //Highlight the possible moves
-                GameController.Instance.SelectedPiece = CurrentPiece;
+                // Select a piece and highlight its possible moves
+                activePlayer.SelectedPiece = currentPiece;
                 HighlightTile(Color.green);
-                foreach (Tile t in CurrentPiece.PossibleMoves())
+
+                foreach (Tile t in currentPiece.PossibleMoves())
                 {
                     t.HighlightTile(Color.blue);
                 }
-                return;
             }
-            
-            HighlightTile(Color.yellow);
-            GameController.Instance.SelectedPiece = null;
+            else
+            {
+                // No piece selected, highlight tile
+                HighlightTile(Color.yellow);
+                activePlayer.SelectedPiece = null;
+            }
         }
+
 
         public void HighlightTile(Color color)
         {

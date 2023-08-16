@@ -9,9 +9,6 @@ namespace Chess
     {
         public static GameController Instance;
 
-        public Piece SelectedPiece;
-        public Tile ClickedTile;
-
         public List<Board> Boards = new List<Board>();
 
         //Singleton
@@ -30,6 +27,5 @@ namespace Chess
             Boards.Add(b);
             b.Initialize();
         }
-
     }
 }

@@ -1,63 +1,81 @@
-@startuml
+@startuml Chess class diagram
 
-class GameController{
-    + {static} GameController Instance
-    + Piece SelectedPiece
-    + Tile ClickedTile
-    + List<Board> Boards
-    + void Awake()
-    + void Start()
+title Chess class diagram
+
+namespace Chess {
+    class GameController <<MonoBheaviour>>{
+        + {static} GameController Instance
+        + Piece SelectedPiece
+        + Tile ClickedTile
+        + List<Board> Boards
+        + void Awake()
+        + void Start()
+    }
+
+    class MatchLog{
+        + Tile MoveFromTile
+        + Tile MoveToTile
+        + MatchLog(Tile from, Tile to)
+    }
+
+    class Board <<MonoBheaviour>> {
+        + {static} int[,] StandardSetup
+        + Tile[,] Tiles
+        + List<BoardLog> MatchLog
+        + Player WhitePlayer
+        + Player BlackPlayer
+        + bool WhitesTurn
+        + List<GameObject> PiecePrefabs
+        + List<Piece> ActivePieces
+        + void Initialize()
+        + void SpawnPlayers()
+        + void ResetBoard()
+        + Player GetActivePlayer()
+        + void NextMove(Piece piece, Tile tile)
+        - void DestroyTiles()
+        - void DestroyPieces()
+        - void SpawnTiles()
+        - void SpawnPieces()
+    }
+
+    class Tile <<MonoBheaviour>>{
+        + void OnMouseDown()
+    }
+
+    class Player <<MonoBheaviour>> {
+
+    }
+
+    namespace Pieces {
+        interface Moveable {
+            + List<Tile> PossibleMoves()
+            + void MoveTo(Tile tile)
+        }
+        abstract class Piece <<MonoBheaviour>> {
+            + Player Owner
+            + Tile CurrentTile
+            + void ApplyTexture(Texture2D texture)
+            + {abstract} List<Tile> PossibleMoves()
+            ~ void MoveTo(Tile tile)
+            - IEnumerator lerpMovement(Vector3 target, float duration)
+        }
+
+        class Pawn {}
+        class Rook {}
+    }
+
 }
 
-class Board {
-    + {static} int[,] StandardSetup
-    + Tile[,] Tiles
-    + Player WhitePlayer
-    + Player BlackPlayer
-    + bool WhitesTurn
-    + List<GameObject> PiecePrefabs
-    + List<Piece> ActivePieces
-    + void Initialize()
-    + void SpawnPlayers()
-    + void ResetBoard()
-    - void DestroyTiles()
-    - void DestroyPieces()
-    - void SpawnTiles()
-    - void SpawnPieces()
-}
+Chess.GameController "1" *-- "*" Chess.Board
+Chess.Board "1" *-- "64" Chess.Tile
+Chess.Board "1" *-- "*" Chess.MatchLog
+Chess.Board "1" *-- "2" Chess.Player
+Chess.Player "1" o-- "*" Chess.Pieces.Piece
+Chess.Pieces.Piece "1" o-- "1" Chess.Tile
 
-class Tile{
-
-}
-
-class Player {
-
-}
-
-class Piece {
-    + Player Owner
-    + Tile CurrentTile
-    + {abstract} List<Tile> PossibleMoves()
-    ~ void MoveTo(Tile tile)
-    - IEnumerator lerpMovement(Vector3 target, float duration)
-}
-
-interface Moveable {
-    + List<Tile> PossibleMoves()
-    + void MoveTo(Tile tile)
-}
-
-GameController "1" *-- "*" Board
-Board "1" *-- "*" Tile
-Board "1" *-- "2" Player
-Player "1" o-- "*" Piece
-Piece "1" o-- "1" Tile
-
-Piece -up-|> Moveable
-
-Piece <|-- Pawn
-Piece <|-- Rook
-
+Chess.Pieces.Piece -up-|> Chess.Pieces.Moveable
+Chess.Pieces.Piece <|-- Chess.Pieces.Pawn
+Chess.Pieces.Piece <|-- Chess.Pieces.Rook
 
 
 @enduml
