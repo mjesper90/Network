@@ -28,9 +28,10 @@ namespace Chess
             b.Initialize();
         }
 
-        public static void Win(Player winner)
+        public void Win(Player winner)
         {
-            print(winner.ToString());
+            print("We have a winner " + winner.ToString() + "!!!!");
+            print("Game Over");
         }
     }
 }

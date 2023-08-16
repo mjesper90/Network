@@ -36,7 +36,7 @@ namespace Chess.Pieces
                 }
                 CurrentTile = tile;
 
-                
+
                 tile.CurrentPiece = this;
                 StartCoroutine(lerpMovement(tile.transform.position, 1f));
             }
@@ -60,9 +60,9 @@ namespace Chess.Pieces
 
         public void Attack(Tile tile)
         {
-            if (tile.CurrentPiece.name == "King")
+            if (tile.CurrentPiece.gameObject.name == "King")
             {
-                GameController.Win(Owner);
+                GameController.Instance.Win(Owner);
             }
             else
             {
