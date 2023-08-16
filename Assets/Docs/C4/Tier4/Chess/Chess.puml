@@ -58,6 +58,7 @@ namespace Chess {
             + {abstract} List<Tile> PossibleMoves()
             ~ void MoveTo(Tile tile)
             - IEnumerator lerpMovement(Vector3 target, float duration)
+            - void Attack(Tile tile)
         }
 
         class Pawn {}

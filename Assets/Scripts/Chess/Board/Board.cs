@@ -124,7 +124,6 @@ namespace Chess
                         // Set piece owner
                         Piece p = go.GetComponent<Piece>();
                         p.Owner = owner;
-                        owner.Pieces.Add(p);
 
                         // Set piece tile
                         Tile tile = Tiles[i, j];
