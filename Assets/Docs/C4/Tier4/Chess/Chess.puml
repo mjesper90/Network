@@ -5,8 +5,6 @@ title Chess class diagram
 namespace Chess {
     class GameController <<MonoBheaviour>>{
         + {static} GameController Instance
-        + Piece SelectedPiece
-        + Tile ClickedTile
         + List<Board> Boards
         + void Awake()
         + void Start()
@@ -43,7 +41,9 @@ namespace Chess {
     }
 
     class Player <<MonoBheaviour>> {
-
+        + List<Piece> Pieces
+        + Piece SelectedPiece
+        + Tile ClickedTile
     }
 
     namespace Pieces {
