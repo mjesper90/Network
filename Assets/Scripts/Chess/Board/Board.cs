@@ -14,7 +14,7 @@ namespace Chess
         public Player BlackPlayer;
 
         /* true = white, false = black */
-        public bool WhitesTurn = false;
+        public bool WhitesTurn = true;
 
         /* Piece value:
         0: Blank

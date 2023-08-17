@@ -3,7 +3,7 @@
 title Chess class diagram
 
 namespace Chess {
-    class GameController <<MonoBheaviour>>{
+    class GameController <<MonoBehaviour>>{
         + {static} GameController Instance
         + List<Board> Boards
         + void Awake()
@@ -16,7 +16,7 @@ namespace Chess {
         + MatchLog(Tile from, Tile to)
     }
 
-    class Board <<MonoBheaviour>> {
+    class Board <<MonoBehaviour>> {
         + {static} int[,] StandardSetup
         + Tile[,] Tiles
         + List<BoardLog> MatchLog
@@ -36,11 +36,11 @@ namespace Chess {
         - void SpawnPieces()
     }
 
-    class Tile <<MonoBheaviour>>{
+    class Tile <<MonoBehaviour>>{
         + void OnMouseDown()
     }
 
-    class Player <<MonoBheaviour>> {
+    class Player <<MonoBehaviour>> {
         + List<Piece> Pieces
         + Piece SelectedPiece
         + Tile ClickedTile
@@ -51,7 +51,7 @@ namespace Chess {
             + List<Tile> PossibleMoves()
             + void MoveTo(Tile tile)
         }
-        abstract class Piece <<MonoBheaviour>> {
+        abstract class Piece <<MonoBehaviour>> {
             + Player Owner
             + Tile CurrentTile
             + void ApplyTexture(Texture2D texture)
