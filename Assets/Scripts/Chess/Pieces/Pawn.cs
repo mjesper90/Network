@@ -55,6 +55,9 @@ namespace Chess.Pieces
                     }
                 }
             }
+
+            // Check for promotion
+
             return moves;
         }
 
