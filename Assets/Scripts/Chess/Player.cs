@@ -7,7 +7,5 @@ namespace Chess
     public class Player : MonoBehaviour
     {
         public List<Piece> Pieces = new List<Piece>();
-        public Piece SelectedPiece;
-        public Tile ClickedTile;
     }
 }

@@ -159,8 +159,6 @@ namespace Chess
             MatchLog.Add(logEntry);
             Debug.Log($"Match log: {MatchLog.Count} " + logEntry.ToString());
             piece.MoveTo(tile);
-            GetActivePlayer().SelectedPiece = null;
-            GetActivePlayer().ClickedTile = null;
 
             WhitesTurn = !WhitesTurn;
         }
