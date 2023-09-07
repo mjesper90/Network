@@ -16,40 +16,83 @@ namespace Chess
 
         public void ClickTile(Tile tile)
         {
-            // If there is a selected piece, check if the tile is a possible move
             if (_selectedPiece != null)
             {
                 if (_selectedPiece.PossibleMoves().Contains(tile))
                 {
+                    // Reset colors for all possible moves of the selected piece
                     foreach (Tile t in _selectedPiece.PossibleMoves())
                     {
                         t.ResetColor();
                     }
+
+                    // Perform the move
                     _board.NextMove(_selectedPiece, tile);
+
+                    // Reset selected piece and last clicked tile
                     _selectedPiece = null;
                     _lastClickedTile = null;
                 }
-                else
+                else if (tile.CurrentPiece != null && tile.CurrentPiece.Owner == _board.GetActivePlayer())
                 {
+                    // Reset colors for all possible moves of the selected piece
                     foreach (Tile t in _selectedPiece.PossibleMoves())
                     {
                         t.ResetColor();
                     }
-                    _selectedPiece = null;
-                    _lastClickedTile = null;
+
+                    // Select the new piece and highlight its possible moves
+                    _selectedPiece = tile.CurrentPiece;
+                    _lastClickedTile = tile;
+
+                    foreach (Tile t in _selectedPiece.PossibleMoves())
+                    {
+                        t.HighlightTile(Color.green);
+                    }
+                }
+            }
+            else if (tile.CurrentPiece != null && tile.CurrentPiece.Owner == _board.GetActivePlayer())
+            {
+                // Set the selected piece and highlight its possible moves
+                _selectedPiece = tile.CurrentPiece;
+                _lastClickedTile = tile;
+
+                foreach (Tile t in _selectedPiece.PossibleMoves())
+                {
+                    t.HighlightTile(Color.green);
                 }
             }
             else
             {
                 if (tile.CurrentPiece != null && tile.CurrentPiece.Owner == _board.GetActivePlayer())
                 {
+                    // Set the selected piece and highlight its possible moves
                     _selectedPiece = tile.CurrentPiece;
                     _lastClickedTile = tile;
+
                     foreach (Tile t in _selectedPiece.PossibleMoves())
                     {
                         t.HighlightTile(Color.green);
                     }
                 }
+            }
+        }
+
+        public void Update()
+        {
+            // Deselect
+            if (Input.GetMouseButtonDown(1))
+            {
+                if (_selectedPiece != null)
+                {
+                    // Reset colors for all possible moves of the selected piece
+                    foreach (Tile t in _selectedPiece.PossibleMoves())
+                    {
+                        t.ResetColor();
+                    }
+                }
+                _selectedPiece = null;
+                _lastClickedTile = null;
             }
         }
     }
