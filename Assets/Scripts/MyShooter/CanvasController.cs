@@ -9,7 +9,6 @@ namespace MyShooter.UI
     public class CanvasController : MonoBehaviour
     {
         private Button[] _buttons;
-
         public Button LoginButton;
         public Button QueueButton;
         public Button OptionsButton;

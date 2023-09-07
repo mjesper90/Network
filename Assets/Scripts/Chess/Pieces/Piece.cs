@@ -11,6 +11,15 @@ namespace Chess.Pieces
 
         public abstract List<Tile> PossibleMoves();
 
+        public void ResetPossibleMoves()
+        {
+            foreach (Tile tile in PossibleMoves())
+            {
+                tile.ResetColor();
+            }
+            CurrentTile?.ResetColor();
+        }
+
         public void ChangeColor(Color color)
         {
             GetComponent<Renderer>().material.color = color;
@@ -70,5 +79,6 @@ namespace Chess.Pieces
                 Destroy(tile.CurrentPiece.gameObject);
             }
         }
+
     }
 }

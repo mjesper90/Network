@@ -1,6 +1,4 @@
 using Chess.Pieces;
-using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -12,6 +10,8 @@ namespace Chess
         public List<BoardLog> MatchLog = new List<BoardLog>();
         public Player WhitePlayer;
         public Player BlackPlayer;
+
+        public InputController IC;
 
         /* true = white, false = black */
         public bool WhitesTurn = true;
@@ -42,6 +42,8 @@ namespace Chess
         // This method is called from GameController
         public void Initialize()
         {
+            IC = gameObject.AddComponent<InputController>();
+            IC.Initialize(this);
             SpawnPlayers();
             SpawnTiles();
             SpawnPieces();
@@ -150,14 +152,19 @@ namespace Chess
         {
             if (piece == null || tile == null)
             {
+                Debug.Log("NextMove: Invalid move");
                 return;
             }
             BoardLog logEntry = new BoardLog(piece.CurrentTile, tile);
             MatchLog.Add(logEntry);
             Debug.Log($"Match log: {MatchLog.Count} " + logEntry.ToString());
             piece.MoveTo(tile);
+            GetActivePlayer().SelectedPiece = null;
+            GetActivePlayer().ClickedTile = null;
+
             WhitesTurn = !WhitesTurn;
         }
+
         public List<Piece> GetActivePieces()
         {
             List<Piece> pieces = new List<Piece>();
@@ -171,9 +178,9 @@ namespace Chess
             return pieces;
         }
 
-        public Player ActivePlayer()
+        public Player GetActivePlayer()
         {
-            return (WhitesTurn) ? WhitePlayer : BlackPlayer;
+            return WhitesTurn ? WhitePlayer : BlackPlayer;
         }
     }
 }

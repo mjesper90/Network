@@ -1,9 +1,6 @@
 using UnityEngine;
 using Chess.Pieces;
 using System;
-using System.Collections;
-using System.Collections.Generic;
-
 
 namespace Chess
 {
@@ -70,56 +67,8 @@ namespace Chess
 
         public void OnMouseDown()
         {
-            Player activePlayer = Board.ActivePlayer();
-
-            // Deselect the last clicked tile
-            if (activePlayer.ClickedTile != null)
-            {
-                activePlayer.ClickedTile.ResetColor();
-            }
-
-            // Set the clicked tile
-            activePlayer.ClickedTile = this;
-
-            Piece selectedPiece = activePlayer.SelectedPiece;
-
-            if (selectedPiece != null)
-            {
-                // Handle piece movement
-                foreach (Tile t in selectedPiece.PossibleMoves())
-                {
-                    t.ResetColor();
-                }
-
-                if (selectedPiece.PossibleMoves().Contains(this) && selectedPiece.Owner == activePlayer)
-                {
-                    Board.NextMove(selectedPiece, this);
-                    activePlayer.SelectedPiece = null;
-                    return;
-                }
-            }
-
-            Piece currentPiece = CurrentPiece;
-
-            if (currentPiece != null)
-            {
-                // Select a piece and highlight its possible moves
-                activePlayer.SelectedPiece = currentPiece;
-                HighlightTile(Color.green);
-
-                foreach (Tile t in currentPiece.PossibleMoves())
-                {
-                    t.HighlightTile(Color.blue);
-                }
-            }
-            else
-            {
-                // No piece selected, highlight tile
-                HighlightTile(Color.yellow);
-                activePlayer.SelectedPiece = null;
-            }
+            Board.IC.ClickTile(this);
         }
-
 
         public void HighlightTile(Color color)
         {
@@ -134,6 +83,5 @@ namespace Chess
                 CurrentPiece.MoveTo(this);
             }
         }
-
     }
 }

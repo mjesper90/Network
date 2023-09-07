@@ -8,7 +8,11 @@ namespace Chess.Pieces
     {
         public override List<Tile> PossibleMoves()
         {
-            throw new System.NotImplementedException();
+            List<Tile> moves = new List<Tile>();
+
+
+
+            return moves;
         }
     }
 }
