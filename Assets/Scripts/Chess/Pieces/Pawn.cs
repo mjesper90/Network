@@ -55,17 +55,34 @@ namespace Chess.Pieces
                     }
                 }
             }
-
-            // Check for promotion
-
             return moves;
         }
 
-        private bool IsStartingPosition(int row)
+        public override void MoveTo(Tile tile)
         {
-            // Define the row index where the pawn's initial double move is allowed
-            // For white pawns, it's row 1; for black pawns, it's the second-to-last row.
-            return (Owner == CurrentTile.Board.WhitePlayer && row == 1) || (Owner == CurrentTile.Board.BlackPlayer && row == 6);
+            base.MoveTo(tile);
+
+            // Check for promotion
+            if (isPromotionPosition(tile.GetCoordinates().Item1))
+            {
+                Promote();
+            }
+        }
+
+        private bool IsStartingPosition(int col)
+        {
+            return (Owner == CurrentTile.Board.WhitePlayer && col == 1) || (Owner == CurrentTile.Board.BlackPlayer && col == 6);
+        }
+
+        private bool isPromotionPosition(int col)
+        {
+            return (Owner == CurrentTile.Board.WhitePlayer && col == 7) || (Owner == CurrentTile.Board.BlackPlayer && col == 0);
+        }
+
+        private void Promote()
+        {
+            CurrentTile.Board.SpawnPiece(CurrentTile.GetCoordinates().Item1, CurrentTile.GetCoordinates().Item2, 5, Owner);
+            Destroy(gameObject);
         }
     }
 }

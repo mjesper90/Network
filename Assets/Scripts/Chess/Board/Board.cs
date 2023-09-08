@@ -114,37 +114,42 @@ namespace Chess
                 for (int j = 0; j < 8; j++)
                 {
                     int value = StandardSetup[i, j];
+                    Player owner = (i < 4) ? WhitePlayer : BlackPlayer;
 
                     if (value != 0)
                     {
-                        // Spawn piece
-                        GameObject go = Instantiate(PiecePrefabs[value - 1]);
-                        go.name = $"{go.name}".Substring(0, go.name.Length - 7);
-                        Player owner = (i < 4) ? WhitePlayer : BlackPlayer;
-                        go.transform.parent = owner.transform;
-
-                        // Set piece owner
-                        Piece p = go.GetComponent<Piece>();
-                        p.Owner = owner;
-
-                        // Set piece tile
-                        Tile tile = Tiles[i, j];
-                        tile.SetPiece(p);
-                        owner.Pieces.Add(p);
-                        if (owner == BlackPlayer)
-                        {
-                            string path = CONSTANTS.TextureBlackDir + p.gameObject.name;
-                            Texture2D txt2d = Resources.Load<Texture2D>(path);
-                            p.ApplyTexture(txt2d);
-                        }
-                        else
-                        {
-                            string path = CONSTANTS.TextureWhiteDir + p.gameObject.name;
-                            Texture2D txt2d = Resources.Load<Texture2D>(path);
-                            p.ApplyTexture(txt2d);
-                        }
+                        SpawnPiece(i, j, value, owner);
                     }
                 }
+            }
+        }
+
+        public void SpawnPiece(int row, int col, int value, Player owner)
+        {
+            // Spawn piece
+            GameObject go = Instantiate(PiecePrefabs[value - 1]);
+            go.name = $"{go.name}".Substring(0, go.name.Length - 7);
+            go.transform.parent = owner.transform;
+
+            // Set piece owner
+            Piece p = go.GetComponent<Piece>();
+            p.Owner = owner;
+
+            // Set piece tile
+            Tile tile = Tiles[row, col];
+            tile.SetPiece(p);
+            owner.Pieces.Add(p);
+            if (owner == BlackPlayer)
+            {
+                string path = CONSTANTS.TextureBlackDir + p.gameObject.name;
+                Texture2D txt2d = Resources.Load<Texture2D>(path);
+                p.ApplyTexture(txt2d);
+            }
+            else
+            {
+                string path = CONSTANTS.TextureWhiteDir + p.gameObject.name;
+                Texture2D txt2d = Resources.Load<Texture2D>(path);
+                p.ApplyTexture(txt2d);
             }
         }
 
